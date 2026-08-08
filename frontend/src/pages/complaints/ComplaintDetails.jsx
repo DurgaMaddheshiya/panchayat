@@ -1,0 +1,360 @@
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  Box, Grid, Card, CardContent, Typography, Button, Chip,
+  Divider, Avatar, TextField, CircularProgress, MenuItem,
+  Paper, Alert, IconButton, Tooltip,
+} from '@mui/material';
+import {
+  ArrowBack as BackIcon,
+  ThumbUp as ThumbUpIcon,
+  Send as SendIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  LocationOn as LocationIcon,
+  Person as PersonIcon,
+  CalendarToday as CalendarIcon,
+  Assignment as AssignIcon,
+} from '@mui/icons-material';
+import api from '../../services/api';
+import { fetchComplaintById, deleteComplaint } from '../../redux/slices/complaintSlice';
+import { API_ENDPOINTS } from '../../config/apiConfig';
+import Loader from '../../components/common/Loader';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
+
+const statusColors = {
+  PENDING: 'warning',
+  IN_PROGRESS: 'info',
+  RESOLVED: 'success',
+  CLOSED: 'default',
+  REJECTED: 'error',
+};
+
+const STATUSES = ['PENDING', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'REJECTED'];
+
+const ComplaintDetails = () => {
+  const { id } = useParams();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { currentComplaint: complaint, loading } = useSelector((state) => state.complaints);
+  const { user } = useSelector((state) => state.auth);
+
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [hasUpvoted, setHasUpvoted] = useState(false);
+  const [upvoteCount, setUpvoteCount] = useState(0);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [statusUpdate, setStatusUpdate] = useState('');
+  const [statusNote, setStatusNote] = useState('');
+
+  const isAdmin = ['ADMIN', 'ROLE_ADMIN'].includes(user?.role);
+  const isOfficial = ['OFFICIAL', 'ROLE_OFFICIAL', 'SOCIAL_WORKER', 'ROLE_SOCIAL_WORKER', 'ADMIN', 'ROLE_ADMIN'].includes(user?.role);
+  // Owner check — backend returns createdBy object with id
+  const isOwner = complaint?.createdBy?.id === user?.id || complaint?.createdBy?.id === parseInt(user?.id);
+
+  useEffect(() => {
+    dispatch(fetchComplaintById(id));
+    fetchComments();
+    fetchUpvoteStatus();
+  }, [id]);
+
+  useEffect(() => {
+    if (complaint) {
+      setUpvoteCount(complaint.upvoteCount || 0);
+      setStatusUpdate(complaint.status || '');
+    }
+  }, [complaint]);
+
+  const fetchComments = async () => {
+    try {
+      const res = await api.get(API_ENDPOINTS.COMMENTS.BY_COMPLAINT(id));
+      setComments(res.data.data?.content || res.data.data || []);
+    } catch (e) {}
+  };
+
+  const fetchUpvoteStatus = async () => {
+    try {
+      const res = await api.get(API_ENDPOINTS.VOTES.HAS_UPVOTED(id));
+      setHasUpvoted(res.data.data || false);
+    } catch (e) {}
+  };
+
+  const handleUpvote = async () => {
+    try {
+      if (hasUpvoted) {
+        await api.delete(API_ENDPOINTS.VOTES.REMOVE_UPVOTE(id));
+        setHasUpvoted(false);
+        setUpvoteCount(c => c - 1);
+      } else {
+        await api.post(API_ENDPOINTS.VOTES.UPVOTE(id));
+        setHasUpvoted(true);
+        setUpvoteCount(c => c + 1);
+      }
+    } catch (e) {}
+  };
+
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
+    setCommentLoading(true);
+    try {
+      await api.post(API_ENDPOINTS.COMMENTS.CREATE, {
+        complaintId: parseInt(id),
+        content: newComment,
+      });
+      setNewComment('');
+      fetchComments();
+    } catch (e) {}
+    setCommentLoading(false);
+  };
+
+  const handleStatusUpdate = async () => {
+    if (!statusUpdate) return;
+    try {
+      await api.put(API_ENDPOINTS.COMPLAINTS.UPDATE_STATUS(id), {
+        status: statusUpdate,
+        note: statusNote,
+      });
+      dispatch(fetchComplaintById(id));
+      setStatusNote('');
+    } catch (e) {}
+  };
+
+  const handleDelete = async () => {
+    const result = await dispatch(deleteComplaint(id));
+    if (result.type === 'complaints/delete/fulfilled') {
+      navigate('/complaints');
+    }
+    setDeleteOpen(false);
+  };
+
+  if (loading || !complaint) return <Loader message="Loading complaint..." />;
+
+  return (
+    <Box>
+      {/* Header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3, flexWrap: 'wrap' }}>
+        <Button startIcon={<BackIcon />} onClick={() => navigate(-1)}>Back</Button>
+        <Typography variant="h5" fontWeight={700} sx={{ flex: 1 }}>
+          Complaint Details
+        </Typography>
+        {/* Edit — only owner when complaint is SUBMITTED/PENDING */}
+        {isOwner && ['SUBMITTED', 'PENDING'].includes(complaint.status) && (
+          <Button
+            variant="outlined"
+            startIcon={<EditIcon />}
+            onClick={() => navigate(`/complaints/${id}/edit`)}
+          >
+            Edit
+          </Button>
+        )}
+        {/* Delete — only owner or admin */}
+        {(isOwner || isAdmin) && (
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={() => setDeleteOpen(true)}
+          >
+            Delete
+          </Button>
+        )}
+      </Box>
+
+      <Grid container spacing={3}>
+        {/* Main content */}
+        <Grid item xs={12} md={8}>
+          <Card elevation={2} sx={{ borderRadius: 2, mb: 3 }}>
+            <CardContent>
+              {/* Status & ID */}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                  {complaint.complaintId}
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Chip label={complaint.priority} size="small" color={complaint.priority === 'HIGH' || complaint.priority === 'URGENT' ? 'error' : 'default'} />
+                  <Chip
+                    label={complaint.status?.replace('_', ' ')}
+                    color={statusColors[complaint.status] || 'default'}
+                    size="small"
+                  />
+                </Box>
+              </Box>
+
+              <Typography variant="h5" fontWeight={700} gutterBottom>
+                {complaint.title}
+              </Typography>
+
+              <Box sx={{ display: 'flex', gap: 3, mb: 2, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <PersonIcon fontSize="small" color="action" />
+                  <Typography variant="body2" color="text.secondary">{complaint.citizenName}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <CalendarIcon fontSize="small" color="action" />
+                  <Typography variant="body2" color="text.secondary">
+                    {complaint.createdAt ? new Date(complaint.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <LocationIcon fontSize="small" color="action" />
+                  <Typography variant="body2" color="text.secondary">{complaint.address || complaint.location || 'N/A'}</Typography>
+                </Box>
+              </Box>
+
+              <Chip label={complaint.categoryName || complaint.category} variant="outlined" size="small" sx={{ mb: 2 }} />
+
+              <Divider sx={{ mb: 2 }} />
+
+              <Typography variant="body1" sx={{ lineHeight: 1.8, whiteSpace: 'pre-line' }}>
+                {complaint.description}
+              </Typography>
+
+              {/* Upvote */}
+              <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Button
+                  variant={hasUpvoted ? 'contained' : 'outlined'}
+                  startIcon={<ThumbUpIcon />}
+                  onClick={handleUpvote}
+                  color="primary"
+                >
+                  {upvoteCount} Upvote{upvoteCount !== 1 ? 's' : ''}
+                </Button>
+                <Typography variant="caption" color="text.secondary">
+                  Support this complaint to increase its priority
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Comments */}
+          <Card elevation={2} sx={{ borderRadius: 2 }}>
+            <CardContent>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
+                Comments ({comments.length})
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+
+              {/* Add comment */}
+              <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+                <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36, fontSize: 14 }}>
+                  {user?.fullName?.[0] || 'U'}
+                </Avatar>
+                <Box sx={{ flex: 1, display: 'flex', gap: 1 }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Write a comment..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleAddComment()}
+                    multiline
+                    maxRows={3}
+                  />
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={handleAddComment}
+                    disabled={commentLoading || !newComment.trim()}
+                    sx={{ minWidth: 40, px: 1.5 }}
+                  >
+                    {commentLoading ? <CircularProgress size={16} /> : <SendIcon fontSize="small" />}
+                  </Button>
+                </Box>
+              </Box>
+
+              {comments.length === 0 ? (
+                <Typography color="text.secondary" textAlign="center" py={2}>
+                  No comments yet. Be the first to comment!
+                </Typography>
+              ) : (
+                comments.map((comment) => (
+                  <Box key={comment.id} sx={{ display: 'flex', gap: 1.5, mb: 2 }}>
+                    <Avatar sx={{ bgcolor: 'secondary.main', width: 36, height: 36, fontSize: 14 }}>
+                      {comment.authorName?.[0] || 'U'}
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <Typography variant="subtitle2" fontWeight={600}>{comment.authorName}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {comment.createdAt ? new Date(comment.createdAt).toLocaleDateString() : ''}
+                        </Typography>
+                        {comment.isOfficial && <Chip label="Official" size="small" color="primary" />}
+                      </Box>
+                      <Typography variant="body2" sx={{ mt: 0.5 }}>{comment.content}</Typography>
+                    </Box>
+                  </Box>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Sidebar */}
+        <Grid item xs={12} md={4}>
+          {/* Status Update (only for officials/admin) */}
+          {isOfficial && (
+            <Card elevation={2} sx={{ borderRadius: 2, mb: 2 }}>
+              <CardContent>
+                <Typography variant="h6" fontWeight={600} gutterBottom>
+                  Update Status
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                <TextField
+                  select fullWidth size="small" label="New Status"
+                  value={statusUpdate} onChange={(e) => setStatusUpdate(e.target.value)}
+                  sx={{ mb: 2 }}
+                >
+                  {STATUSES.map(s => <MenuItem key={s} value={s}>{s.replace('_', ' ')}</MenuItem>)}
+                </TextField>
+                <TextField
+                  fullWidth size="small" multiline rows={2}
+                  label="Status Note (optional)"
+                  value={statusNote} onChange={(e) => setStatusNote(e.target.value)}
+                  sx={{ mb: 2 }}
+                />
+                <Button variant="contained" fullWidth onClick={handleStatusUpdate} startIcon={<AssignIcon />}>
+                  Update Status
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Complaint Info */}
+          <Card elevation={2} sx={{ borderRadius: 2 }}>
+            <CardContent>
+              <Typography variant="h6" fontWeight={600} gutterBottom>Complaint Info</Typography>
+              <Divider sx={{ mb: 2 }} />
+              {[
+                { label: 'Complaint ID', value: complaint.complaintId },
+                { label: 'Category', value: complaint.categoryName || complaint.category },
+                { label: 'Priority', value: complaint.priority },
+                { label: 'Ward', value: complaint.wardNumber || 'N/A' },
+                { label: 'Filed By', value: complaint.citizenName },
+                { label: 'Assigned To', value: complaint.assignedToName || 'Unassigned' },
+                { label: 'Filed On', value: complaint.createdAt ? new Date(complaint.createdAt).toLocaleDateString('en-IN') : 'N/A' },
+                { label: 'Last Updated', value: complaint.updatedAt ? new Date(complaint.updatedAt).toLocaleDateString('en-IN') : 'N/A' },
+              ].map(({ label, value }) => (
+                <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2" color="text.secondary">{label}</Typography>
+                  <Typography variant="body2" fontWeight={600} textAlign="right" sx={{ maxWidth: '55%' }}>{value}</Typography>
+                </Box>
+              ))}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        title="Delete Complaint"
+        message="Are you sure you want to delete this complaint? This action cannot be undone."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteOpen(false)}
+      />
+    </Box>
+  );
+};
+
+export default ComplaintDetails;
