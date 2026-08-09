@@ -110,13 +110,15 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     @Query("SELECT c.village, COUNT(c) FROM Complaint c WHERE c.isDeleted = false GROUP BY c.village")
     List<Object[]> getComplaintCountByVillage();
 
-    @Query("SELECT FUNCTION('year', c.createdAt) * 100 + FUNCTION('month', c.createdAt), COUNT(c) FROM Complaint c " +
-           "WHERE c.isDeleted = false GROUP BY FUNCTION('year', c.createdAt), FUNCTION('month', c.createdAt) " +
-           "ORDER BY FUNCTION('year', c.createdAt) DESC, FUNCTION('month', c.createdAt) DESC")
+    @Query("SELECT YEAR(c.createdAt), MONTH(c.createdAt), COUNT(c) FROM Complaint c " +
+           "WHERE c.isDeleted = false " +
+           "GROUP BY YEAR(c.createdAt), MONTH(c.createdAt) " +
+           "ORDER BY YEAR(c.createdAt) DESC, MONTH(c.createdAt) DESC")
     List<Object[]> getMonthlyComplaintStats();
 
-    @Query("SELECT AVG(timestampdiff(DAY, c.createdAt, c.resolvedAt)) FROM Complaint c " +
-           "WHERE c.status = 'RESOLVED' AND c.resolvedAt IS NOT NULL AND c.isDeleted = false")
+    @Query("SELECT AVG(DATEDIFF(c.resolvedAt, c.createdAt)) FROM Complaint c " +
+           "WHERE c.status = com.apnashehar.enums.ComplaintStatus.RESOLVED " +
+           "AND c.resolvedAt IS NOT NULL AND c.isDeleted = false")
     Double getAverageResolutionTimeInDays();
 
     @Query("SELECT COUNT(c) FROM Complaint c WHERE c.createdBy.id = :userId AND c.isDeleted = false")
