@@ -36,10 +36,18 @@ public class AuthController {
     @PostMapping("/send-otp")
     @Operation(summary = "Send OTP to email for verification")
     public ResponseEntity<ApiResponse<String>> sendOtp(@Valid @RequestBody SendOtpRequest request) {
-        emailVerificationService.sendVerificationOtp(request.getEmail(), request.getFullName());
-        return ResponseEntity.ok(
-            ApiResponse.success("OTP sent successfully to your email", "OTP_SENT")
-        );
+        try {
+            emailVerificationService.sendVerificationOtp(request.getEmail(), request.getFullName());
+            return ResponseEntity.ok(
+                ApiResponse.success("OTP sent successfully to your email", "OTP_SENT")
+            );
+        } catch (Exception e) {
+            // Log the error but don't expose sensitive details
+            System.err.println("Failed to send OTP to: " + request.getEmail() + ", Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                ApiResponse.error("Failed to send OTP. Please check your email address and try again.")
+            );
+        }
     }
 
     @PostMapping("/verify-otp")

@@ -19,6 +19,12 @@ public class EmailService {
 
     public void sendOtpEmail(String toEmail, String otp, String fullName) {
         try {
+            // Validate mail configuration first
+            if (fromEmail == null || fromEmail.isEmpty()) {
+                log.error("Mail configuration error: fromEmail is not set");
+                throw new RuntimeException("Email service not properly configured - missing sender address");
+            }
+
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
@@ -41,8 +47,21 @@ public class EmailService {
             
             log.info("OTP email sent successfully to: {}", toEmail);
         } catch (Exception e) {
-            log.error("Failed to send OTP email to: {}", toEmail, e);
-            throw new RuntimeException("Failed to send verification email");
+            log.error("Failed to send OTP email to: {} - Error: {}", toEmail, e.getMessage());
+            
+            // Provide specific error messages for common issues
+            String errorMsg = "Failed to send verification email";
+            if (e.getMessage() != null) {
+                if (e.getMessage().contains("authentication") || e.getMessage().contains("password")) {
+                    errorMsg = "Email service authentication failed - please check configuration";
+                } else if (e.getMessage().contains("host") || e.getMessage().contains("connection")) {
+                    errorMsg = "Email service connection failed - please check network settings";
+                } else if (e.getMessage().contains("configuration")) {
+                    errorMsg = e.getMessage(); // Use our custom config message
+                }
+            }
+            
+            throw new RuntimeException(errorMsg);
         }
     }
 
