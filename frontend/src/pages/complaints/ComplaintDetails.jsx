@@ -115,12 +115,20 @@ const ComplaintDetails = () => {
     setAssignLoading(true);
     try {
       await api.put(`${API_ENDPOINTS.COMPLAINTS.ASSIGN(id)}?assigneeId=${selectedOfficial}`);
-      setAssignSuccess('Complaint assigned successfully!');
+      setAssignSuccess('✅ Complaint assigned successfully! Page will refresh...');
       setAssignOpen(false);
-      dispatch(fetchComplaintById(id));
-      setTimeout(() => setAssignSuccess(''), 3000);
+      
+      // Refresh complaint data to show assigned official
+      setTimeout(async () => {
+        await dispatch(fetchComplaintById(id));
+        setAssignSuccess('Complaint assigned and details updated!');
+        setTimeout(() => setAssignSuccess(''), 3000);
+      }, 500);
+      
     } catch (e) {
       console.error('Assign failed', e);
+      setAssignSuccess('❌ Failed to assign complaint. Please try again.');
+      setTimeout(() => setAssignSuccess(''), 3000);
     }
     setAssignLoading(false);
   };
@@ -413,23 +421,141 @@ const ComplaintDetails = () => {
           {/* Complaint Info */}
           <Card elevation={2} sx={{ borderRadius: 2 }}>
             <CardContent>
-              <Typography variant="h6" fontWeight={600} gutterBottom>Complaint Info</Typography>
+              <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                📋 Complaint Info
+              </Typography>
               <Divider sx={{ mb: 2 }} />
-              {[
-                { label: 'Complaint ID', value: complaint.complaintId },
-                { label: 'Category', value: complaint.categoryName || complaint.category },
-                { label: 'Priority', value: complaint.priority },
-                { label: 'Ward', value: complaint.wardNumber || 'N/A' },
-                { label: 'Filed By', value: complaint.citizenName },
-                { label: 'Assigned To', value: complaint.assignedToName || '—' },
-                { label: 'Filed On', value: complaint.createdAt ? new Date(complaint.createdAt).toLocaleDateString('en-IN') : 'N/A' },
-                { label: 'Last Updated', value: complaint.updatedAt ? new Date(complaint.updatedAt).toLocaleDateString('en-IN') : 'N/A' },
-              ].map(({ label, value }) => (
-                <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2" color="text.secondary">{label}</Typography>
-                  <Typography variant="body2" fontWeight={600} textAlign="right" sx={{ maxWidth: '55%' }}>{value}</Typography>
+              
+              {/* Complaint ID */}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="caption" color="text.secondary">Complaint ID</Typography>
+                <Typography variant="body1" fontWeight={700} color="primary.main">
+                  {complaint.complaintId || 'N/A'}
+                </Typography>
+              </Box>
+
+              {/* Category with Color Coding */}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="caption" color="text.secondary">Category</Typography>
+                <Box sx={{ mt: 0.5 }}>
+                  <Chip 
+                    label={complaint.categoryName || complaint.category || 'N/A'} 
+                    size="small" 
+                    color="primary" 
+                    variant="outlined"
+                  />
                 </Box>
-              ))}
+              </Box>
+
+              {/* Priority with Color Coding */}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="caption" color="text.secondary">Priority</Typography>
+                <Box sx={{ mt: 0.5 }}>
+                  <Chip 
+                    label={complaint.priority || 'N/A'} 
+                    size="small" 
+                    color={
+                      complaint.priority === 'URGENT' ? 'error' : 
+                      complaint.priority === 'HIGH' ? 'warning' : 
+                      complaint.priority === 'MEDIUM' ? 'info' : 'default'
+                    }
+                  />
+                </Box>
+              </Box>
+
+              {/* Ward */}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="caption" color="text.secondary">Ward</Typography>
+                <Typography variant="body2" fontWeight={600}>
+                  {complaint.wardNumber ? `Ward ${complaint.wardNumber}` : 'N/A'}
+                </Typography>
+              </Box>
+
+              {/* Filed By */}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="caption" color="text.secondary">Filed By</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                  <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>
+                    {complaint.citizenName?.[0] || 'U'}
+                  </Avatar>
+                  <Typography variant="body2" fontWeight={600}>
+                    {complaint.citizenName || 'Unknown User'}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Assigned To */}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="caption" color="text.secondary">Assigned To</Typography>
+                {complaint.assignedTo || complaint.assignedToName ? (
+                  <Box sx={{ 
+                    display: 'flex', alignItems: 'center', gap: 1, mt: 0.5,
+                    p: 1, bgcolor: 'success.50', borderRadius: 1, border: '1px solid', borderColor: 'success.200' 
+                  }}>
+                    <Avatar sx={{ width: 24, height: 24, fontSize: 12, bgcolor: 'success.main' }}>
+                      {(complaint.assignedTo?.name || complaint.assignedToName)?.[0] || 'O'}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="body2" fontWeight={600} color="success.dark">
+                        {complaint.assignedTo?.name || complaint.assignedToName || 'Unknown Official'}
+                      </Typography>
+                      <Typography variant="caption" color="success.dark">
+                        {complaint.assignedTo?.role?.replace('ROLE_', '').replace('_', ' ') || 
+                         complaint.assignedToRole?.replace('ROLE_', '').replace('_', ' ') || 'Official'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                ) : (
+                  <Box sx={{ 
+                    display: 'flex', alignItems: 'center', gap: 1, mt: 0.5,
+                    p: 1, bgcolor: 'grey.50', borderRadius: 1, border: '1px solid', borderColor: 'grey.300' 
+                  }}>
+                    <PersonIcon sx={{ fontSize: 20, color: 'text.disabled' }} />
+                    <Typography variant="body2" color="text.disabled">
+                      Not assigned yet
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+
+              {/* Filed On */}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="caption" color="text.secondary">Filed On</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                  <CalendarIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                  <Typography variant="body2" fontWeight={600}>
+                    {complaint.createdAt ? new Date(complaint.createdAt).toLocaleDateString('en-IN', {
+                      day: 'numeric', month: 'short', year: 'numeric'
+                    }) : 'N/A'}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Last Updated */}
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="caption" color="text.secondary">Last Updated</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                  <CalendarIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                  <Typography variant="body2" fontWeight={600}>
+                    {complaint.updatedAt ? new Date(complaint.updatedAt).toLocaleDateString('en-IN', {
+                      day: 'numeric', month: 'short', year: 'numeric'
+                    }) : 'N/A'}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Status */}
+              <Divider sx={{ my: 2 }} />
+              <Box>
+                <Typography variant="caption" color="text.secondary">Current Status</Typography>
+                <Box sx={{ mt: 0.5 }}>
+                  <Chip
+                    label={complaint.status?.replace(/_/g, ' ') || 'Unknown'}
+                    color={statusColors[complaint.status] || 'default'}
+                    sx={{ fontWeight: 600 }}
+                  />
+                </Box>
+              </Box>
             </CardContent>
           </Card>
         </Grid>

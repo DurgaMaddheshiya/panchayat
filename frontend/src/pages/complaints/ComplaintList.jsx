@@ -217,9 +217,20 @@ const ComplaintList = () => {
                           color={statusColors[complaint.status] || 'default'}
                           size="small"
                         />
-                        {isAdmin && complaint.assignedToName && (
-                          <Typography variant="caption" color="text.secondary">
-                            Assigned: {complaint.assignedToName}
+                        
+                        {/* Show assigned info to everyone if assigned */}
+                        {complaint.assignedTo || complaint.assignedToName ? (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                            <Avatar sx={{ width: 20, height: 20, fontSize: 10, bgcolor: 'success.main' }}>
+                              {(complaint.assignedTo?.name || complaint.assignedToName)?.[0] || 'O'}
+                            </Avatar>
+                            <Typography variant="caption" color="success.dark" fontWeight={600}>
+                              {complaint.assignedTo?.name || complaint.assignedToName}
+                            </Typography>
+                          </Box>
+                        ) : (
+                          <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                            Not assigned
                           </Typography>
                         )}
                       </Box>

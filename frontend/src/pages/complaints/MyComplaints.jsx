@@ -146,8 +146,23 @@ const MyComplaints = () => {
                         </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
                           Filed: {complaint.createdAt ? new Date(complaint.createdAt).toLocaleDateString('en-IN') : 'N/A'}
-                          {complaint.assignedToName && ` • Assigned to: ${complaint.assignedToName}`}
                         </Typography>
+                        
+                        {/* Assignment Status */}
+                        {complaint.assignedTo || complaint.assignedToName ? (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, p: 1, bgcolor: 'success.50', borderRadius: 1 }}>
+                            <Avatar sx={{ width: 20, height: 20, fontSize: 10, bgcolor: 'success.main' }}>
+                              {(complaint.assignedTo?.name || complaint.assignedToName)?.[0] || 'O'}
+                            </Avatar>
+                            <Typography variant="caption" color="success.dark" fontWeight={600}>
+                              Assigned to: {complaint.assignedTo?.name || complaint.assignedToName}
+                            </Typography>
+                          </Box>
+                        ) : (
+                          <Typography variant="caption" color="text.disabled" sx={{ mt: 1, fontStyle: 'italic', display: 'block' }}>
+                            ⏳ Waiting for assignment
+                          </Typography>
+                        )}
                       </Box>
                       <Box sx={{ ml: 2 }}>
                         <Chip
