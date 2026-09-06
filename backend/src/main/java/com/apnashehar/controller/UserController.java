@@ -29,15 +29,23 @@ public class UserController {
     @GetMapping("/profile")
     @Operation(summary = "Get current user profile")
     public ResponseEntity<ApiResponse<UserResponse>> getCurrentUserProfile() {
-        UserResponse response = userService.getCurrentUserProfile();
-        return ResponseEntity.ok(ApiResponse.success(response));
+        UserResponse user = userService.getCurrentUserProfile();
+        return ResponseEntity.ok(ApiResponse.success(user));
+    }
+
+    @GetMapping
+    @Operation(summary = "Get all users (Admin fallback)")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<UserResponse>> getAllUsers(Pageable pageable) {
+        Page<UserResponse> users = userService.getAllUsers(pageable);
+        return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get user by ID")
-    public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         UserResponse response = userService.getUserById(id);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/profile")

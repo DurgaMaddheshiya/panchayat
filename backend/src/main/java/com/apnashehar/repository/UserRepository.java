@@ -5,9 +5,11 @@ import com.apnashehar.enums.UserRole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -69,8 +71,22 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT COUNT(u) FROM User u WHERE u.isActive = true AND u.isDeleted = false")
     Long countActiveUsers();
 
+    @Query("SELECT COUNT(u) FROM User u WHERE u.isActive = false AND u.isDeleted = false")
+    Long countInactiveUsers();
+
+    Page<User> findByIsDeletedFalseOrderByCreatedAtDesc(Pageable pageable);
+
     Long countByIsVerifiedAndIsActive(Boolean isVerified, Boolean isActive);
 
     @Query("SELECT u.village, COUNT(u) FROM User u WHERE u.isDeleted = false GROUP BY u.village")
     List<Object[]> getUserCountByVillage();
+
+    /**
+     * Delete all unverified users who are NOT admins.
+     * Called on startup to clean up fake/test registrations.
+     */
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM User u WHERE u.isVerified = false AND u.role != com.apnashehar.enums.UserRole.ADMIN")
+    int deleteUnverifiedNonAdminUsers();
 }

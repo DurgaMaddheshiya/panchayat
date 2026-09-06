@@ -22,7 +22,7 @@ const EditProfile = () => {
 
   const [profileData, setProfileData] = useState({
     fullName: '',
-    phone: '',
+    mobile: '',
     address: '',
     wardNumber: '',
   });
@@ -41,7 +41,7 @@ const EditProfile = () => {
     if (user) {
       setProfileData({
         fullName: user.fullName || user.name || '',
-        phone: user.phone || '',
+        mobile: user.mobile || user.phone || '',
         address: user.address || '',
         wardNumber: user.wardNumber || '',
       });
@@ -144,8 +144,8 @@ const EditProfile = () => {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField
-                    fullWidth label="Phone Number" name="phone"
-                    value={profileData.phone} onChange={handleProfileChange}
+                    fullWidth label="Phone Number" name="mobile"
+                    value={profileData.mobile} onChange={handleProfileChange}
                     inputProps={{ maxLength: 10 }}
                   />
                 </Grid>

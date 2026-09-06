@@ -207,16 +207,18 @@ const Login = () => {
             </Button>
 
             <Box sx={{ textAlign: 'center', mt: 2 }}>
+              <Link to="/forgot-password" style={{ textDecoration: 'none' }}>
+                <Typography
+                  variant="body2"
+                  sx={{ color: '#ed6c02', fontWeight: 500, mb: 1, '&:hover': { textDecoration: 'underline' } }}
+                >
+                  Forgot Password?
+                </Typography>
+              </Link>
               <Link to="/register" style={{ textDecoration: 'none' }}>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    color: '#667eea',
-                    fontWeight: 500,
-                    '&:hover': {
-                      textDecoration: 'underline'
-                    }
-                  }}
+                <Typography
+                  variant="body2"
+                  sx={{ color: '#667eea', fontWeight: 500, '&:hover': { textDecoration: 'underline' } }}
                 >
                   Don't have an account? Register now
                 </Typography>

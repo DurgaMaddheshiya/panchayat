@@ -2,27 +2,17 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  Container,
-  Box,
-  Paper,
-  TextField,
-  Button,
-  Typography,
-  InputAdornment,
-  IconButton,
-  CircularProgress,
-  Grid,
-  MenuItem,
-  Stepper,
-  Step,
-  StepLabel,
+  Container, Box, Paper, TextField, Button, Typography,
+  InputAdornment, IconButton, CircularProgress, Grid, Alert,
 } from '@mui/material';
-import { Visibility, VisibilityOff, HowToReg as RegisterIcon, Home as HomeIcon } from '@mui/icons-material';
+import {
+  Visibility, VisibilityOff,
+  HowToReg as RegisterIcon,
+  Home as HomeIcon,
+  CheckCircle as CheckIcon,
+} from '@mui/icons-material';
 import { register } from '../../redux/slices/authSlice';
-
-const ROLES = [
-  { value: 'CITIZEN', label: 'Citizen (Default)' },
-];
+import EmailVerification from '../../components/auth/EmailVerification';
 
 const Register = () => {
   const dispatch = useDispatch();
@@ -30,13 +20,15 @@ const Register = () => {
   const { loading, error } = useSelector((state) => state.auth);
 
   const [showPassword, setShowPassword] = useState(false);
+  const [step, setStep] = useState('form');
+  // verifiedOtp stored for potential retry logic
+  const [, setVerifiedOtp] = useState('');
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     mobile: '',
     password: '',
     confirmPassword: '',
-    role: 'CITIZEN',
     address: '',
     wardNumber: '',
   });
@@ -60,30 +52,51 @@ const Register = () => {
     return null;
   };
 
-  const handleSubmit = async (e) => {
+  // Step 1: Validate form, then go to email verification
+  const handleProceedToVerify = (e) => {
     e.preventDefault();
     const validationError = validate();
     if (validationError) {
       setFormError(validationError);
       return;
     }
+    setStep('verify_email');
+  };
+
+  // Step 2: After email verified, submit registration
+  const handleEmailVerified = async (otp) => {
+    setVerifiedOtp(otp);
+    setStep('submitting');
 
     const { confirmPassword, ...submitData } = formData;
-    // wardNumber ko number mein convert karo
+    submitData.otp = otp;
+    submitData.role = 'CITIZEN';
     if (submitData.wardNumber) {
       submitData.wardNumber = parseInt(submitData.wardNumber, 10);
     } else {
       delete submitData.wardNumber;
     }
+
     const result = await dispatch(register(submitData));
     if (result.type === 'auth/register/fulfilled') {
       navigate('/dashboard');
+    } else {
+      setStep('form');
+      setFormError(result.payload || 'Registration failed. Please try again.');
     }
   };
 
+  // Shared input style
+  const inputSx = {
+    '& .MuiOutlinedInput-root': {
+      '&.Mui-focused fieldset': { borderColor: '#667eea' },
+    },
+    '& .MuiInputLabel-root.Mui-focused': { color: '#667eea' },
+  };
+
   return (
-    <Box 
-      sx={{ 
+    <Box
+      sx={{
         minHeight: '100vh',
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         display: 'flex',
@@ -97,275 +110,169 @@ const Register = () => {
           <Button
             startIcon={<HomeIcon />}
             onClick={() => navigate('/')}
-            sx={{ 
-              color: 'white',
-              '&:hover': {
-                backgroundColor: 'rgba(255,255,255,0.1)',
-              }
-            }}
+            sx={{ color: 'white', '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' } }}
           >
             Back to Home
           </Button>
         </Box>
 
-        <Paper 
-          elevation={10} 
-          sx={{ 
-            p: 4, 
-            borderRadius: 3,
-            backgroundColor: 'white',
-          }}
-        >
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-            <Box
-              sx={{
-                width: 70,
-                height: 70,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mb: 2,
-                boxShadow: '0 8px 16px rgba(102, 126, 234, 0.3)',
-              }}
-            >
-              <RegisterIcon sx={{ fontSize: 36, color: 'white' }} />
-            </Box>
-            <Typography 
-              component="h1" 
-              variant="h4" 
-              fontWeight={800}
-              sx={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              Join Panchayat
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Create your account and start reporting civic issues
-            </Typography>
-          </Box>
+        {/* Email Verification Step */}
+        {step === 'verify_email' && (
+          <EmailVerification
+            email={formData.email}
+            fullName={formData.fullName}
+            onVerified={handleEmailVerified}
+            onBack={() => setStep('form')}
+            initialStep="send"
+          />
+        )}
 
-          <Box component="form" onSubmit={handleSubmit}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Full Name"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  autoFocus
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#667eea',
-                      },
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': {
-                      color: '#667eea',
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Email Address"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#667eea',
-                      },
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': {
-                      color: '#667eea',
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Mobile Number"
-                  name="mobile"
-                  value={formData.mobile}
-                  onChange={handleChange}
-                  inputProps={{ maxLength: 10 }}
-                  helperText="10 digit number"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#667eea',
-                      },
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': {
-                      color: '#667eea',
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={8}>
-                <TextField
-                  fullWidth
-                  label="Address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#667eea',
-                      },
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': {
-                      color: '#667eea',
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  label="Ward Number"
-                  name="wardNumber"
-                  type="number"
-                  value={formData.wardNumber}
-                  onChange={handleChange}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#667eea',
-                      },
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': {
-                      color: '#667eea',
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={handleChange}
-                  helperText="Min 8 chars: uppercase, lowercase & digit"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#667eea',
-                      },
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': {
-                      color: '#667eea',
-                    },
-                  }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Confirm Password"
-                  name="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#667eea',
-                      },
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': {
-                      color: '#667eea',
-                    },
-                  }}
-                />
-              </Grid>
-            </Grid>
+        {/* Submitting Step */}
+        {step === 'submitting' && (
+          <Paper elevation={10} sx={{ p: 4, borderRadius: 3, textAlign: 'center' }}>
+            <CircularProgress size={48} sx={{ mb: 2 }} />
+            <Typography variant="h6">Creating your account...</Typography>
+          </Paper>
+        )}
 
-            {(formError || error) && (
-              <Typography 
-                color="error" 
-                variant="body2" 
-                sx={{ 
-                  mt: 2, 
-                  p: 1.5, 
-                  backgroundColor: '#fee2e2', 
-                  borderRadius: 1,
-                  border: '1px solid #fecaca'
+        {/* Registration Form */}
+        {step === 'form' && (
+          <Paper elevation={10} sx={{ p: 4, borderRadius: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+              <Box
+                sx={{
+                  width: 70, height: 70, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  mb: 2, boxShadow: '0 8px 16px rgba(102,126,234,0.3)',
                 }}
               >
-                {formError || error}
+                <RegisterIcon sx={{ fontSize: 36, color: 'white' }} />
+              </Box>
+              <Typography
+                component="h1" variant="h4" fontWeight={800}
+                sx={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                Join Panchayat
               </Typography>
-            )}
-
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              size="large"
-              sx={{ 
-                mt: 3, 
-                mb: 2,
-                py: 1.5,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                fontWeight: 600,
-                fontSize: '1rem',
-                boxShadow: '0 4px 14px rgba(102, 126, 234, 0.4)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #5568d3 0%, #6a4493 100%)',
-                  boxShadow: '0 6px 20px rgba(102, 126, 234, 0.5)',
-                }
-              }}
-              disabled={loading}
-            >
-              {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Create Account'}
-            </Button>
-
-            <Box textAlign="center">
-              <Link to="/login" style={{ textDecoration: 'none' }}>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    color: '#667eea',
-                    fontWeight: 500,
-                    '&:hover': {
-                      textDecoration: 'underline'
-                    }
-                  }}
-                >
-                  Already have an account? Sign in
-                </Typography>
-              </Link>
+              <Typography variant="body2" color="text.secondary">
+                Create your account and start reporting civic issues
+              </Typography>
             </Box>
-          </Box>
-        </Paper>
+
+            {/* Email verification info banner */}
+            <Alert severity="info" icon={<CheckIcon />} sx={{ mb: 2 }}>
+              Your email will be verified via OTP before account creation
+            </Alert>
+
+            <Box component="form" onSubmit={handleProceedToVerify}>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <TextField
+                    required fullWidth label="Full Name" name="fullName"
+                    value={formData.fullName} onChange={handleChange}
+                    autoFocus sx={inputSx}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    required fullWidth label="Email Address" name="email"
+                    type="email" value={formData.email} onChange={handleChange}
+                    sx={inputSx}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    required fullWidth label="Mobile Number" name="mobile"
+                    value={formData.mobile} onChange={handleChange}
+                    inputProps={{ maxLength: 10 }} helperText="10 digit number"
+                    sx={inputSx}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={8}>
+                  <TextField
+                    fullWidth label="Address" name="address"
+                    value={formData.address} onChange={handleChange}
+                    sx={inputSx}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth label="Ward Number" name="wardNumber" type="number"
+                    value={formData.wardNumber} onChange={handleChange}
+                    sx={inputSx}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    required fullWidth label="Password" name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password} onChange={handleChange}
+                    helperText="Min 8 chars: uppercase, lowercase & digit"
+                    sx={inputSx}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    required fullWidth label="Confirm Password"
+                    name="confirmPassword" type="password"
+                    value={formData.confirmPassword} onChange={handleChange}
+                    sx={inputSx}
+                  />
+                </Grid>
+              </Grid>
+
+              {(formError || error) && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  {formError || error}
+                </Alert>
+              )}
+
+              <Button
+                type="submit"
+                fullWidth variant="contained" size="large"
+                sx={{
+                  mt: 3, mb: 2, py: 1.5,
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  fontWeight: 600, fontSize: '1rem',
+                  boxShadow: '0 4px 14px rgba(102,126,234,0.4)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5568d3 0%, #6a4493 100%)',
+                    boxShadow: '0 6px 20px rgba(102,126,234,0.5)',
+                  },
+                }}
+                disabled={loading}
+              >
+                Continue to Email Verification →
+              </Button>
+
+              <Box textAlign="center">
+                <Link to="/login" style={{ textDecoration: 'none' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#667eea', fontWeight: 500, '&:hover': { textDecoration: 'underline' } }}
+                  >
+                    Already have an account? Sign in
+                  </Typography>
+                </Link>
+              </Box>
+            </Box>
+          </Paper>
+        )}
       </Container>
     </Box>
   );

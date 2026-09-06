@@ -53,28 +53,38 @@ public class DashboardService {
         Map<String, Long> categoryWiseStats = new HashMap<>();
         List<Object[]> categoryStats = complaintRepository.getComplaintCountByCategory();
         for (Object[] stat : categoryStats) {
-            categoryWiseStats.put(stat[0].toString(), (Long) stat[1]);
+            if (stat[0] != null && stat[1] != null) {
+                categoryWiseStats.put(stat[0].toString(), ((Number) stat[1]).longValue());
+            }
         }
 
         // Priority-wise stats
         Map<String, Long> priorityWiseStats = new HashMap<>();
         List<Object[]> priorityStats = complaintRepository.getComplaintCountByPriority();
         for (Object[] stat : priorityStats) {
-            priorityWiseStats.put(stat[0].toString(), (Long) stat[1]);
+            if (stat[0] != null && stat[1] != null) {
+                priorityWiseStats.put(stat[0].toString(), ((Number) stat[1]).longValue());
+            }
         }
 
         // Monthly stats
         Map<String, Long> monthlyStats = new HashMap<>();
         List<Object[]> monthlyData = complaintRepository.getMonthlyComplaintStats();
         for (Object[] data : monthlyData) {
-            monthlyStats.put(data[0].toString(), (Long) data[1]);
+            if (data[0] != null && data[1] != null && data[2] != null) {
+                String key = data[0] + "-" + data[1]; // year-month format
+                Long count = ((Number) data[2]).longValue(); // Safe casting
+                monthlyStats.put(key, count);
+            }
         }
 
         // Ward-wise stats
         Map<String, Long> wardWiseStats = new HashMap<>();
         List<Object[]> wardData = complaintRepository.getComplaintCountByVillage();
         for (Object[] data : wardData) {
-            wardWiseStats.put(data[0].toString(), (Long) data[1]);
+            if (data[0] != null && data[1] != null) {
+                wardWiseStats.put(data[0].toString(), ((Number) data[1]).longValue());
+            }
         }
 
         // User statistics

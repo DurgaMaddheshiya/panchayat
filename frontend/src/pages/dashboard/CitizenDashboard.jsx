@@ -20,17 +20,18 @@ import {
   CheckCircle as CheckIcon,
   HourglassEmpty as PendingIcon,
   TrendingUp as TrendingIcon,
-  Notifications as NotifIcon,
 } from '@mui/icons-material';
 import { fetchMyComplaints } from '../../redux/slices/complaintSlice';
-import { fetchDashboardStats } from '../../redux/slices/dashboardSlice';
+import { fetchCitizenDashboard } from '../../redux/slices/dashboardSlice';
 import Loader from '../../components/common/Loader';
 
 const statusColors = {
-  PENDING: 'warning',
-  IN_PROGRESS: 'info',
+  SUBMITTED: 'default',
+  UNDER_REVIEW: 'info',
+  ASSIGNED: 'info',
+  IN_PROGRESS: 'warning',
+  ON_HOLD: 'warning',
   RESOLVED: 'success',
-  CLOSED: 'default',
   REJECTED: 'error',
 };
 
@@ -39,19 +40,26 @@ const CitizenDashboard = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const { myComplaints, loading } = useSelector((state) => state.complaints);
-  const { stats } = useSelector((state) => state.dashboard);
+  // eslint-disable-next-line no-unused-vars
+  const { citizenStats, loading: dashboardLoading } = useSelector((state) => state.dashboard);
 
   useEffect(() => {
     dispatch(fetchMyComplaints({ page: 0, size: 5 }));
-    dispatch(fetchDashboardStats());
-  }, [dispatch]);
+    if (user?.id) {
+      dispatch(fetchCitizenDashboard(user.id));
+    }
+  }, [dispatch, user?.id]);
 
+  // Calculate user stats from their complaints
   const myStats = {
     total: myComplaints.length,
-    pending: myComplaints.filter(c => c.status === 'PENDING').length,
-    inProgress: myComplaints.filter(c => c.status === 'IN_PROGRESS').length,
+    pending: myComplaints.filter(c => ['SUBMITTED', 'UNDER_REVIEW', 'ASSIGNED'].includes(c.status)).length,
+    inProgress: myComplaints.filter(c => ['IN_PROGRESS', 'ON_HOLD'].includes(c.status)).length,
     resolved: myComplaints.filter(c => c.status === 'RESOLVED').length,
   };
+
+  // Calculate user-specific resolution rate
+  const userResolutionRate = myStats.total > 0 ? Math.round((myStats.resolved / myStats.total) * 100) : 0;
 
   const statCards = [
     { label: 'Total Filed', value: myStats.total, icon: <ReportIcon />, color: '#1976d2', bg: '#e3f2fd' },
@@ -223,43 +231,47 @@ const CitizenDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Overall City Stats */}
-          {stats && (
-            <Card elevation={2} sx={{ borderRadius: 2 }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight={600} gutterBottom>
-                  City Overview
-                </Typography>
-                <Divider sx={{ mb: 2 }} />
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                  <Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2">Resolution Rate</Typography>
-                      <Typography variant="body2" fontWeight={600} color="success.main">
-                        {stats.resolutionRate || 0}%
-                      </Typography>
-                    </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={stats.resolutionRate || 0}
-                      color="success"
-                      sx={{ mt: 0.5, borderRadius: 1 }}
-                    />
-                  </Box>
+          {/* My Personal Stats */}
+          <Card elevation={2} sx={{ borderRadius: 2 }}>
+            <CardContent>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
+                My Stats
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">Total Complaints</Typography>
-                    <Typography variant="body2" fontWeight={600}>{stats.totalComplaints || 0}</Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">Resolved Today</Typography>
+                    <Typography variant="body2">My Resolution Rate</Typography>
                     <Typography variant="body2" fontWeight={600} color="success.main">
-                      {stats.resolvedToday || 0}
+                      {userResolutionRate}%
                     </Typography>
                   </Box>
+                  <LinearProgress
+                    variant="determinate"
+                    value={userResolutionRate}
+                    color="success"
+                    sx={{ mt: 0.5, borderRadius: 1 }}
+                  />
                 </Box>
-              </CardContent>
-            </Card>
-          )}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" color="text.secondary">My Total Complaints</Typography>
+                  <Typography variant="body2" fontWeight={600}>{myStats.total}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" color="text.secondary">Currently Pending</Typography>
+                  <Typography variant="body2" fontWeight={600} color="warning.main">
+                    {myStats.pending}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" color="text.secondary">Successfully Resolved</Typography>
+                  <Typography variant="body2" fontWeight={600} color="success.main">
+                    {myStats.resolved}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
     </Box>

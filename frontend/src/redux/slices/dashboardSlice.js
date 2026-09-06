@@ -13,8 +13,9 @@ export const fetchDashboardStats = createAsyncThunk(
   'dashboard/fetchStats',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/dashboard/admin/stats');
-      return response.data.data;
+      const response = await api.get(API_ENDPOINTS.DASHBOARD.STATS);
+      // Handle both wrapped and unwrapped responses
+      return response.data?.data || response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message);
     }

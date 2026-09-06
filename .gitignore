@@ -91,12 +91,18 @@ backend/data/
 uploads/
 files/
 
-# Environment
+# Spring Boot sensitive configs
+backend/src/main/resources/application-prod.properties
+
+# Environment - NEVER commit these
 .env
 .env.local
 .env.production
 .env.development.local
 .env.test.local
+backend/.env
+backend/.env.*
+*.env
 
 # Application Logs
 logs/

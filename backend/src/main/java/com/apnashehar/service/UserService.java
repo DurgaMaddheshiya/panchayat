@@ -18,6 +18,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * User Service - Business logic for user management
  */
@@ -151,17 +154,22 @@ public class UserService {
     }
 
     /**
-     * Admin: Delete user
+     * Admin: Delete user (soft delete - admin cannot be deleted)
      */
     @Transactional
     public void deleteUser(Long userId) {
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
+        // Admin ko delete nahi kar sakte
+        if (user.getRole() == UserRole.ADMIN) {
+            throw new BadRequestException("Admin users cannot be deleted");
+        }
+
         user.setIsDeleted(true);
         userRepository.save(user);
 
-        log.info("User deleted: {}", userId);
+        log.info("User permanently deleted: {} ({})", user.getEmail(), userId);
     }
 
     /**
@@ -175,6 +183,57 @@ public class UserService {
     @Transactional(readOnly = true)
     public Long getUserCountByRole(UserRole role) {
         return userRepository.countByRole(role);
+    }
+
+    /**
+     * Admin: Get all users (paginated)
+     */
+    @Transactional(readOnly = true)
+    public Page<UserResponse> getAllUsers(Pageable pageable) {
+        return userRepository.findByIsDeletedFalseOrderByCreatedAtDesc(pageable)
+                .map(userMapper::toResponse);
+    }
+
+    /**
+     * Admin: Update user by admin
+     */
+    @Transactional
+    public void updateUserByAdmin(Long userId, UserRole role, Boolean isActive) {
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        if (role != null) {
+            user.setRole(role);
+        }
+        if (isActive != null) {
+            user.setIsActive(isActive);
+        }
+
+        userRepository.save(user);
+        log.info("User {} updated by admin - role: {}, active: {}", userId, role, isActive);
+    }
+
+    /**
+     * Admin: Get user statistics
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getUserStatistics() {
+        Map<String, Object> stats = new HashMap<>();
+        
+        Long totalUsers = userRepository.countActiveUsers();
+        Long totalCitizens = userRepository.countByRole(UserRole.CITIZEN);
+        Long totalSocialWorkers = userRepository.countByRole(UserRole.SOCIAL_WORKER);
+        Long totalAdmins = userRepository.countByRole(UserRole.ADMIN);
+        Long inactiveUsers = userRepository.countInactiveUsers();
+
+        stats.put("totalUsers", totalUsers);
+        stats.put("totalCitizens", totalCitizens);
+        stats.put("totalSocialWorkers", totalSocialWorkers);
+        stats.put("totalAdmins", totalAdmins);
+        stats.put("inactiveUsers", inactiveUsers);
+        stats.put("activeUsers", totalUsers - inactiveUsers);
+
+        return stats;
     }
 
     private UserPrincipal getCurrentUser() {

@@ -110,15 +110,16 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     @Query("SELECT c.village, COUNT(c) FROM Complaint c WHERE c.isDeleted = false GROUP BY c.village")
     List<Object[]> getComplaintCountByVillage();
 
-    @Query("SELECT YEAR(c.createdAt), MONTH(c.createdAt), COUNT(c) FROM Complaint c " +
-           "WHERE c.isDeleted = false " +
-           "GROUP BY YEAR(c.createdAt), MONTH(c.createdAt) " +
-           "ORDER BY YEAR(c.createdAt) DESC, MONTH(c.createdAt) DESC")
+    @Query(value = "SELECT YEAR(created_at), MONTH(created_at), COUNT(*) " +
+                   "FROM complaints WHERE is_deleted = false " +
+                   "GROUP BY YEAR(created_at), MONTH(created_at) " +
+                   "ORDER BY YEAR(created_at) DESC, MONTH(created_at) DESC",
+           nativeQuery = true)
     List<Object[]> getMonthlyComplaintStats();
 
-    @Query("SELECT AVG(DATEDIFF(c.resolvedAt, c.createdAt)) FROM Complaint c " +
-           "WHERE c.status = com.apnashehar.enums.ComplaintStatus.RESOLVED " +
-           "AND c.resolvedAt IS NOT NULL AND c.isDeleted = false")
+    @Query(value = "SELECT AVG(DATEDIFF('DAY', created_at, resolved_at)) FROM complaints " +
+                   "WHERE status = 'RESOLVED' AND resolved_at IS NOT NULL AND is_deleted = false",
+           nativeQuery = true)
     Double getAverageResolutionTimeInDays();
 
     @Query("SELECT COUNT(c) FROM Complaint c WHERE c.createdBy.id = :userId AND c.isDeleted = false")

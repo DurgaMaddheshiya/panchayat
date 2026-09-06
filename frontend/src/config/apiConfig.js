@@ -63,6 +63,7 @@ export const API_ENDPOINTS = {
   // Dashboard
   DASHBOARD: {
     STATS: `/api/dashboard/stats`,
+    ADMIN_STATS: `/api/dashboard/stats`,
     CITIZEN: (id) => `/api/dashboard/citizen/${id}`,
     SOCIAL_WORKER: (id) => `/api/dashboard/social-worker/${id}`,
   },

@@ -12,6 +12,7 @@ import Layout from './components/layout/Layout';
 import LandingPage from './pages/public/LandingPage';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
 
 // Protected Pages
 import Dashboard from './pages/dashboard/Dashboard';
@@ -23,6 +24,8 @@ import EditComplaint from './pages/complaints/EditComplaint';
 import Profile from './pages/profile/Profile';
 import EditProfile from './pages/profile/EditProfile';
 import CreateUser from './pages/admin/CreateUser';
+import ManageUsers from './pages/admin/ManageUsers';
+import Reports from './pages/admin/Reports';
 import DeletedComplaints from './pages/admin/DeletedComplaints';
 import NotFound from './pages/NotFound';
 
@@ -51,6 +54,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
         <Route path="/register" element={user ? <Navigate to="/dashboard" /> : <Register />} />
+        <Route path="/forgot-password" element={user ? <Navigate to="/dashboard" /> : <ForgotPassword />} />
 
         {/* Protected — wrapped in Layout */}
         <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
@@ -69,6 +73,8 @@ function App() {
 
           {/* Admin only */}
           <Route path="/admin/create-user" element={<CreateUser />} />
+          <Route path="/users" element={<ManageUsers />} />
+          <Route path="/reports" element={<Reports />} />
           <Route path="/admin/deleted-complaints" element={<DeletedComplaints />} />
         </Route>
 

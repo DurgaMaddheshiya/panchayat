@@ -44,33 +44,33 @@ import {
 const features = [
   {
     icon: <ReportIcon sx={{ fontSize: 56, color: '#667eea' }} />,
-    title: 'File Complaints',
-    desc: 'Report civic issues instantly with photos, location, and detailed description. Your voice matters.',
+    title: '📝 शिकायत दर्ज करो',
+    desc: 'फोटो खींचो, लोकेशन भेजो, पूरी बात लिखो। बस 2 मिनट में तुम्हारी आवाज़ सरपंच तक पहुँच जाएगी!',
   },
   {
     icon: <TrackIcon sx={{ fontSize: 56, color: '#10b981' }} />,
-    title: 'Real-time Tracking',
-    desc: 'Monitor your complaint journey from submission to resolution with live status updates and notifications.',
+    title: '👀 लाइव ट्रैकिंग',
+    desc: 'अब ना कोई बहाना, ना कोई झूठ! तुम्हारी शिकायत कहाँ तक पहुंची, सब दिखेगा लाइव स्टेटस में।',
   },
   {
     icon: <CheckIcon sx={{ fontSize: 56, color: '#f59e0b' }} />,
-    title: 'Fast Resolution',
-    desc: 'Officials are notified instantly with priority-based assignment for quicker response times.',
+    title: '⚡ फटाफट समाधान',
+    desc: 'जितनी ज़रूरी शिकायत, उतनी तेज़ कार्रवाई! अब फालतू इंतज़ार नहीं, काम होगा टाइम पे।',
   },
   {
     icon: <PeopleIcon sx={{ fontSize: 56, color: '#6366f1' }} />,
-    title: 'Community Power',
-    desc: 'Upvote issues that affect your neighborhood and amplify the voice of your community.',
+    title: '🤝 मिलकर करो आवाज़',
+    desc: 'तुम्हारी पड़ोस वाली भी परेशान है? उसकी शिकायत को वोट दो! जितने ज़्यादा वोट, उतनी तेज़ सुनवाई।',
   },
   {
     icon: <SpeedIcon sx={{ fontSize: 56, color: '#ef4444' }} />,
-    title: 'Smart Priority',
-    desc: 'AI-powered prioritization ensures critical issues get immediate attention from authorities.',
+    title: '🎯 स्मार्ट प्राथमिकता',
+    desc: 'बड़ी समस्या को पहले प्राथमिकता! अब हर शिकायत को उसकी अहमियत के हिसाब से संभाला जाएगा।',
   },
   {
     icon: <SecurityIcon sx={{ fontSize: 56, color: '#764ba2' }} />,
-    title: 'Safe & Transparent',
-    desc: 'Complete audit trail, secure authentication, and transparent communication throughout the process.',
+    title: '🔒 सुरक्षित और पारदर्शी',
+    desc: 'सब कुछ रिकॉर्ड! कोई धांधली नहीं। पूरी प्रक्रिया पारदर्शी और सुरक्षित है। भरोसा करो!',
   },
 ];
 
@@ -85,6 +85,7 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  // stats fetched from API and stored in state
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -311,7 +312,7 @@ const LandingPage = () => {
             <Box>
               <Chip 
                 icon={<VerifiedIcon />}
-                label="Smart Digital Governance Platform" 
+                label="डिजिटल इंडिया का नया ज़माना 🚀" 
                 sx={{ 
                   mb: 3, 
                   fontWeight: 600, 
@@ -331,18 +332,18 @@ const LandingPage = () => {
                   letterSpacing: '-0.02em'
                 }}
               >
-                Panchayat
+                🌾 पंचायत 🏛️
               </Typography>
               <Typography 
                 variant="h4" 
                 sx={{ 
                   mb: 2, 
-                  fontWeight: 300,
+                  fontWeight: 600,
                   fontSize: { xs: '1.5rem', md: '2rem' },
                   opacity: 0.95
                 }}
               >
-                Report. Track. Resolve. Together.
+                अपने गाँव की आवाज़, सरकार के पास!
               </Typography>
               <Typography 
                 variant="h6" 
@@ -355,9 +356,9 @@ const LandingPage = () => {
                   lineHeight: 1.6
                 }}
               >
-                Empower your community by reporting civic issues instantly. 
-                Track progress in real-time and work with local authorities 
-                to build a better city for everyone.
+                सड़क टूटी? बिजली गायब? पानी की समस्या? 
+                <br />
+                अब चुप मत बैठो! अपनी शिकायत दर्ज करो और देखो कैसे होती है सुनवाई। 💪
               </Typography>
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
                 {!user && (
@@ -511,10 +512,10 @@ const LandingPage = () => {
               WebkitTextFillColor: 'transparent',
             }}
           >
-            Why Choose Panchayat?
+            Why Choose पंचायत? 🤔
           </Typography>
           <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 600, mx: 'auto' }}>
-            A comprehensive platform designed to bridge the gap between citizens and local governance
+            गाँव हो या शहर, अब हर जगह की समस्या का होगा हल!
           </Typography>
         </Box>
         <Grid container spacing={4}>
@@ -565,36 +566,36 @@ const LandingPage = () => {
               gutterBottom
               sx={{ fontSize: { xs: '2rem', md: '2.75rem' }, color: '#1f2937' }}
             >
-              How It Works
+              कैसे काम करता है? 🛠️
             </Typography>
             <Typography variant="h6" color="text.secondary">
-              Getting started is simple and straightforward
+              बस 4 आसान स्टेप्स में समस्या का समाधान!
             </Typography>
           </Box>
           <Grid container spacing={4} alignItems="stretch">
             {[
               { 
                 step: '1', 
-                title: 'Create Account', 
-                desc: 'Sign up for free as a citizen and verify your details.',
+                title: '📱 रजिस्टर करो', 
+                desc: 'मुफ़्त में साइन अप करो। नाम, फोन, गाँव बताओ बस!',
                 color: '#667eea'
               },
               { 
                 step: '2', 
-                title: 'Report Issue', 
-                desc: 'File your complaint with photos, location, and detailed description.',
+                title: '📸 शिकायत करो', 
+                desc: 'फोटो लगाओ, जगह बताओ, पूरी बात लिखो। आसान है!',
                 color: '#10b981'
               },
               { 
                 step: '3', 
-                title: 'Track Status', 
-                desc: 'Get real-time updates and notifications on your complaint progress.',
+                title: '🔔 ट्रैक करो', 
+                desc: 'हर अपडेट मिलेगा नोटिफिकेशन से। क्या हो रहा है, सब दिखेगा!',
                 color: '#f59e0b'
               },
               { 
                 step: '4', 
-                title: 'Get Resolved', 
-                desc: 'Officials work on your issue and mark it resolved with proof.',
+                title: '✅ समाधान पाओ', 
+                desc: 'अफसर काम करेंगे, प्रूफ के साथ रिज़ॉल्व करेंगे। पक्का!',
                 color: '#ef4444'
               },
             ].map((item, index) => (
@@ -664,11 +665,11 @@ const LandingPage = () => {
       >
         <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
           <Typography variant="h3" fontWeight={800} gutterBottom sx={{ fontSize: { xs: '2rem', md: '3rem' } }}>
-            Ready to Make a Difference?
+            तैयार हो बदलाव के लिए? 💪
           </Typography>
           <Typography variant="h6" sx={{ mb: 5, opacity: 0.95, lineHeight: 1.7 }}>
-            Join thousands of active citizens already using Panchayat to resolve 
-            civic issues and build stronger, more responsive communities.
+            हज़ारों लोग पहले से जुड़े हैं पंचायत से। अपनी समस्या का हल पाओ, 
+            अपने गाँव/शहर को बेहतर बनाओ। साथ मिलकर, सब संभव है! 🚀
           </Typography>
           {!user ? (
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>

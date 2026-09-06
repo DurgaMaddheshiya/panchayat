@@ -50,4 +50,8 @@ public class RegisterRequest {
     
     @Pattern(regexp = "^[0-9]{6}$", message = "Pincode must be 6 digits")
     private String pincode;
+
+    // OTP for email verification
+    @Pattern(regexp = "\\d{6}", message = "OTP must be exactly 6 digits")
+    private String otp;
 }

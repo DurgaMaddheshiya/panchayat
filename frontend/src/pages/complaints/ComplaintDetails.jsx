@@ -24,14 +24,16 @@ import Loader from '../../components/common/Loader';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 const statusColors = {
-  PENDING: 'warning',
-  IN_PROGRESS: 'info',
+  SUBMITTED: 'default',
+  UNDER_REVIEW: 'info',
+  ASSIGNED: 'info',
+  IN_PROGRESS: 'warning',
+  ON_HOLD: 'warning',
   RESOLVED: 'success',
-  CLOSED: 'default',
   REJECTED: 'error',
 };
 
-const STATUSES = ['PENDING', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'REJECTED'];
+const STATUSES = ['SUBMITTED', 'UNDER_REVIEW', 'ASSIGNED', 'IN_PROGRESS', 'ON_HOLD', 'RESOLVED', 'REJECTED'];
 
 const ComplaintDetails = () => {
   const { id } = useParams();
@@ -114,7 +116,7 @@ const ComplaintDetails = () => {
     try {
       await api.put(API_ENDPOINTS.COMPLAINTS.UPDATE_STATUS(id), {
         status: statusUpdate,
-        note: statusNote,
+        officialRemarks: statusNote,
       });
       dispatch(fetchComplaintById(id));
       setStatusNote('');
@@ -140,7 +142,7 @@ const ComplaintDetails = () => {
           Complaint Details
         </Typography>
         {/* Edit — only owner when complaint is SUBMITTED/PENDING */}
-        {isOwner && ['SUBMITTED', 'PENDING'].includes(complaint.status) && (
+        {isOwner && ['SUBMITTED', 'UNDER_REVIEW'].includes(complaint.status) && (
           <Button
             variant="outlined"
             startIcon={<EditIcon />}

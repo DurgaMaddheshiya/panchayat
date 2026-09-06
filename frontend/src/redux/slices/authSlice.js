@@ -62,11 +62,17 @@ export const fetchProfile = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get(API_ENDPOINTS.USERS.PROFILE);
-      const userData = response.data.data;
-      localStorage.setItem('user', JSON.stringify(userData));
-      return userData;
+      // Backend returns UserResponse directly (not wrapped in ApiResponse)
+      const userData = response.data?.data || response.data;
+      if (userData) {
+        localStorage.setItem('user', JSON.stringify(userData));
+        return userData;
+      }
+      // If no data returned, keep existing user from state (don't null out)
+      return null;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch profile');
+      // Don't log out on profile fetch failure - just return null silently
+      return null;
     }
   }
 );
@@ -121,7 +127,10 @@ const authSlice = createSlice({
       })
       // Fetch Profile
       .addCase(fetchProfile.fulfilled, (state, action) => {
-        state.user = action.payload;
+        // Only update user if data was returned — never null out existing user
+        if (action.payload) {
+          state.user = action.payload;
+        }
       });
   },
 });
