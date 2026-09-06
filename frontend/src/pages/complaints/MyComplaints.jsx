@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Button, Chip, Card, CardContent,
   CardActionArea, Pagination, Tabs, Tab, Grid,
-  LinearProgress,
+  LinearProgress, Avatar,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { fetchMyComplaints } from '../../redux/slices/complaintSlice';

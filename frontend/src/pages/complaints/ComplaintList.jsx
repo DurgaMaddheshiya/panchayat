@@ -5,6 +5,7 @@ import {
   Box, Grid, Typography, Button, TextField, MenuItem,
   InputAdornment, Pagination, Chip, Card, CardContent,
   CardActionArea, Divider, Paper, IconButton, Tooltip,
+  Avatar,
 } from '@mui/material';
 import {
   Search as SearchIcon,
