@@ -137,8 +137,6 @@ const ComplaintDetails = () => {
       setRatingLoading(false);
     }
   };
-    } catch (e) {}
-  };
 
   const fetchUpvoteStatus = async () => {
     try {
