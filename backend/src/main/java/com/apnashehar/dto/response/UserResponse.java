@@ -19,6 +19,7 @@ public class UserResponse {
 
     private Long id;
     private String fullName;
+    private String name;  // Alias for fullName (backward compatibility)
     private String email;
     private String mobile;
     private UserRole role;

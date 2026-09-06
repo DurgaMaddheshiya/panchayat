@@ -308,11 +308,11 @@ const AssignedComplaints = () => {
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Avatar sx={{ width: 28, height: 28, fontSize: 12 }}>
-                            {complaint.citizenName?.[0]}
+                            {(complaint.createdBy?.fullName || complaint.createdBy?.name || complaint.citizenName)?.[0]}
                           </Avatar>
                           <Box>
                             <Typography variant="body2" fontWeight={600}>
-                              {complaint.citizenName}
+                              {complaint.createdBy?.fullName || complaint.createdBy?.name || complaint.citizenName || 'Unknown'}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                               Ward {complaint.wardNumber || '—'}

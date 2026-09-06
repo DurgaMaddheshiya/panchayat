@@ -24,6 +24,7 @@ import {
   Category as CategoryIcon,
   Home as HomeIcon,
   Delete as DeleteIcon,
+  Star as StarIcon,
 } from '@mui/icons-material';
 
 const citizenNav = [
@@ -31,6 +32,7 @@ const citizenNav = [
   { label: 'All Complaints', icon: <ListAltIcon />, path: '/complaints' },
   { label: 'File Complaint', icon: <AddIcon />, path: '/complaints/create' },
   { label: 'My Complaints', icon: <ReportIcon />, path: '/my-complaints' },
+  { label: 'Official Performance', icon: <StarIcon />, path: '/official-performance' },
   { label: 'Profile', icon: <PersonIcon />, path: '/profile' },
 ];
 
@@ -38,13 +40,14 @@ const officialNav = [
   { label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { label: 'All Complaints', icon: <ListAltIcon />, path: '/complaints' },
   { label: 'Assigned to Me', icon: <ReportIcon />, path: '/assigned-complaints' },
-  { label: 'Statistics', icon: <BarChartIcon />, path: '/dashboard' },
+  { label: 'Official Performance', icon: <StarIcon />, path: '/official-performance' },
   { label: 'Profile', icon: <PersonIcon />, path: '/profile' },
 ];
 
 const adminNav = [
   { label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { label: 'All Complaints', icon: <ListAltIcon />, path: '/complaints' },
+  { label: 'Official Performance', icon: <StarIcon />, path: '/official-performance' },
   { label: 'Deleted Complaints', icon: <DeleteIcon sx={{ color: 'error.main' }} />, path: '/admin/deleted-complaints' },
   { label: 'Create User', icon: <PeopleIcon />, path: '/admin/create-user' },
   { label: 'Reports', icon: <BarChartIcon />, path: '/reports' },

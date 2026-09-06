@@ -127,4 +127,13 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
 
     @Query("SELECT COUNT(c) FROM Complaint c WHERE c.assignedTo.id = :userId AND c.isDeleted = false")
     Long countAssignedComplaintsByUser(@Param("userId") Long userId);
+
+    // Additional queries for rating service
+    Long countByAssignedToIdAndStatus(Long assignedToId, ComplaintStatus status);
+    
+    @Query("SELECT COUNT(c) FROM Complaint c WHERE c.assignedTo.id = :assignedToId AND c.status IN :statuses AND c.isDeleted = false")
+    Long countByAssignedToIdAndStatusIn(@Param("assignedToId") Long assignedToId, @Param("statuses") List<ComplaintStatus> statuses);
+    
+    @Query("SELECT COUNT(c) FROM Complaint c WHERE c.assignedTo.id = :assignedToId AND c.createdAt >= :date AND c.isDeleted = false")
+    Long countByAssignedToIdAndCreatedAtAfter(@Param("assignedToId") Long assignedToId, @Param("date") LocalDateTime date);
 }

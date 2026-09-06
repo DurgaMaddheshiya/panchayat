@@ -356,6 +356,7 @@ public class ComplaintService {
         
         return ComplaintResponse.builder()
                 .id(complaint.getId())
+                .complaintId(complaint.getComplaintId())  // Fixed: Added complaint ID
                 .title(complaint.getTitle())
                 .description(complaint.getDescription())
                 .category(complaint.getCategory())
@@ -387,9 +388,12 @@ public class ComplaintService {
         return UserResponse.builder()
                 .id(user.getId())
                 .fullName(user.getFullName())
+                .name(user.getFullName())   // alias for frontend compatibility
                 .email(user.getEmail())
                 .role(user.getRole())
                 .profileImage(user.getProfileImage())
+                .village(user.getVillage())
+                .wardNumber(user.getWardNumber())
                 .build();
     }
 }

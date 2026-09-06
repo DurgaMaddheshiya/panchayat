@@ -5,13 +5,14 @@ import {
   Box, Grid, Typography, Button, TextField, MenuItem,
   InputAdornment, Pagination, Chip, Card, CardContent,
   CardActionArea, Divider, Paper, IconButton, Tooltip,
-  Avatar,
+  Avatar, Rating,
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Add as AddIcon,
   FilterList as FilterIcon,
   Clear as ClearIcon,
+  Star as StarIcon,
 } from '@mui/icons-material';
 import { fetchComplaints } from '../../redux/slices/complaintSlice';
 import Loader from '../../components/common/Loader';
@@ -200,7 +201,7 @@ const ComplaintList = () => {
                             📍 {complaint.location || complaint.address || 'N/A'}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            👤 {complaint.citizenName}
+                            👤 {complaint.createdBy?.fullName || complaint.createdBy?.name || complaint.citizenName || 'Unknown'}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             🗓 {complaint.createdAt ? new Date(complaint.createdAt).toLocaleDateString() : 'N/A'}
@@ -219,20 +220,41 @@ const ComplaintList = () => {
                           size="small"
                         />
                         
-                        {/* Show assigned info to everyone if assigned */}
-                        {complaint.assignedTo || complaint.assignedToName ? (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                        {/* Assigned official display */}
+                        {complaint.assignedTo ? (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             <Avatar sx={{ width: 20, height: 20, fontSize: 10, bgcolor: 'success.main' }}>
-                              {(complaint.assignedTo?.name || complaint.assignedToName)?.[0] || 'O'}
+                              {(complaint.assignedTo?.fullName || complaint.assignedTo?.name)?.[0] || 'O'}
                             </Avatar>
                             <Typography variant="caption" color="success.dark" fontWeight={600}>
-                              {complaint.assignedTo?.name || complaint.assignedToName}
+                              {complaint.assignedTo?.fullName || complaint.assignedTo?.name}
                             </Typography>
                           </Box>
                         ) : (
                           <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic' }}>
                             Not assigned
                           </Typography>
+                        )}
+
+                        {/* Rating badge for resolved complaints */}
+                        {complaint.status === 'RESOLVED' && (
+                          complaint.averageRating ? (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <Rating value={complaint.averageRating} readOnly size="small" precision={0.5} />
+                              <Typography variant="caption" color="warning.dark" fontWeight={700}>
+                                {complaint.averageRating.toFixed(1)}
+                              </Typography>
+                            </Box>
+                          ) : (
+                            <Chip
+                              icon={<StarIcon sx={{ fontSize: '12px !important' }} />}
+                              label="Resolved"
+                              size="small"
+                              color="success"
+                              variant="outlined"
+                              sx={{ fontSize: 10 }}
+                            />
+                          )
                         )}
                       </Box>
                     </Box>

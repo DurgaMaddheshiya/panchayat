@@ -4,9 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Button, Chip, Card, CardContent,
   CardActionArea, Pagination, Tabs, Tab, Grid,
-  LinearProgress, Avatar,
+  LinearProgress, Avatar, Rating,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, Star as StarIcon, RateReview as RateReviewIcon } from '@mui/icons-material';
 import { fetchMyComplaints } from '../../redux/slices/complaintSlice';
 import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
@@ -149,13 +149,13 @@ const MyComplaints = () => {
                         </Typography>
                         
                         {/* Assignment Status */}
-                        {complaint.assignedTo || complaint.assignedToName ? (
+                        {complaint.assignedTo ? (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, p: 1, bgcolor: 'success.50', borderRadius: 1 }}>
                             <Avatar sx={{ width: 20, height: 20, fontSize: 10, bgcolor: 'success.main' }}>
-                              {(complaint.assignedTo?.name || complaint.assignedToName)?.[0] || 'O'}
+                              {(complaint.assignedTo?.fullName || complaint.assignedTo?.name)?.[0] || 'O'}
                             </Avatar>
                             <Typography variant="caption" color="success.dark" fontWeight={600}>
-                              Assigned to: {complaint.assignedTo?.name || complaint.assignedToName}
+                              Assigned to: {complaint.assignedTo?.fullName || complaint.assignedTo?.name}
                             </Typography>
                           </Box>
                         ) : (
@@ -164,12 +164,27 @@ const MyComplaints = () => {
                           </Typography>
                         )}
                       </Box>
-                      <Box sx={{ ml: 2 }}>
+                      <Box sx={{ ml: 2, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
                         <Chip
                           label={complaint.status?.replace('_', ' ')}
                           color={statusColors[complaint.status] || 'default'}
                           size="small"
                         />
+                        {/* Rate Now button for resolved complaints with assigned official */}
+                        {complaint.status === 'RESOLVED' && complaint.assignedTo && (
+                          <Chip
+                            icon={<StarIcon sx={{ fontSize: '14px !important' }} />}
+                            label="Rate Official"
+                            size="small"
+                            color="warning"
+                            variant="outlined"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/complaints/${complaint.id}`);
+                            }}
+                            sx={{ cursor: 'pointer', fontWeight: 600, fontSize: 11 }}
+                          />
+                        )}
                       </Box>
                     </Box>
                   </CardContent>

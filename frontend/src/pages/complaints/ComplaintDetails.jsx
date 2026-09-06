@@ -5,6 +5,7 @@ import {
   Box, Grid, Card, CardContent, Typography, Button, Chip,
   Divider, Avatar, TextField, CircularProgress, MenuItem,
   Paper, Alert, Dialog, DialogTitle, DialogContent, DialogActions,
+  Rating, FormControlLabel, Checkbox, Stack,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -17,6 +18,9 @@ import {
   CalendarToday as CalendarIcon,
   Assignment as AssignIcon,
   CheckCircle as CheckIcon,
+  Star as StarIcon,
+  StarBorder as StarBorderIcon,
+  RateReview as RateReviewIcon,
 } from '@mui/icons-material';
 import api from '../../services/api';
 import { fetchComplaintById, deleteComplaint } from '../../redux/slices/complaintSlice';
@@ -63,6 +67,18 @@ const ComplaintDetails = () => {
   const [assignLoading, setAssignLoading] = useState(false);
   const [assignSuccess, setAssignSuccess] = useState('');
 
+  // Rating states
+  const [ratingOpen, setRatingOpen] = useState(false);
+  const [ratingValue, setRatingValue] = useState(0);
+  const [ratingFeedback, setRatingFeedback] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [ratingLoading, setRatingLoading] = useState(false);
+  const [ratingSuccess, setRatingSuccess] = useState('');
+  const [canRate, setCanRate] = useState(false);
+  const [existingRating, setExistingRating] = useState(null);
+
+  const isCitizen = ['CITIZEN', 'ROLE_CITIZEN'].includes(user?.role);
+
   const isAdmin = ['ADMIN', 'ROLE_ADMIN'].includes(user?.role);
   const isOfficial = ['OFFICIAL', 'ROLE_OFFICIAL', 'SOCIAL_WORKER', 'ROLE_SOCIAL_WORKER', 'ADMIN', 'ROLE_ADMIN'].includes(user?.role);
   const isOwner = complaint?.createdBy?.id === user?.id || complaint?.createdBy?.id === parseInt(user?.id);
@@ -77,13 +93,50 @@ const ComplaintDetails = () => {
     if (complaint) {
       setUpvoteCount(complaint.upvoteCount || 0);
       setStatusUpdate(complaint.status || '');
+      // Check rating eligibility when complaint loads
+      if (isCitizen && complaint.status === 'RESOLVED') {
+        fetchCanRate();
+      }
     }
-  }, [complaint]);
+  }, [complaint]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchComments = async () => {
     try {
       const res = await api.get(API_ENDPOINTS.COMMENTS.BY_COMPLAINT(id));
       setComments(res.data.data?.content || res.data.data || []);
+    } catch (e) {}
+  };
+
+  const fetchCanRate = async () => {
+    try {
+      const res = await api.get(`/api/ratings/can-rate/${id}`);
+      setCanRate(res.data?.data === true);
+    } catch (e) {
+      setCanRate(false);
+    }
+  };
+
+  const handleSubmitRating = async () => {
+    if (!ratingValue) return;
+    setRatingLoading(true);
+    try {
+      await api.post('/api/ratings/submit', {
+        complaintId: parseInt(id),
+        rating: ratingValue,
+        feedback: ratingFeedback,
+        isAnonymous,
+      });
+      setRatingSuccess('Thank you for your feedback!');
+      setRatingOpen(false);
+      setCanRate(false);
+      setExistingRating(ratingValue);
+      setTimeout(() => setRatingSuccess(''), 4000);
+    } catch (e) {
+      console.error('Rating failed:', e);
+    } finally {
+      setRatingLoading(false);
+    }
+  };
     } catch (e) {}
   };
 
@@ -360,11 +413,18 @@ const ComplaintDetails = () => {
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1.5, bgcolor: 'success.50', borderRadius: 1, border: '1px solid', borderColor: 'success.200' }}>
                       <Avatar sx={{ width: 32, height: 32, bgcolor: 'success.main', fontSize: 13 }}>
-                        {complaint.assignedToName?.[0] || 'O'}
+                        {(complaint.assignedTo?.fullName || complaint.assignedTo?.name)?.[0] || 'O'}
                       </Avatar>
                       <Box>
-                        <Typography variant="body2" fontWeight={600}>{complaint.assignedToName}</Typography>
-                        <Typography variant="caption" color="text.secondary">{complaint.assignedToEmail}</Typography>
+                        <Typography variant="body2" fontWeight={600}>
+                          {complaint.assignedTo?.fullName || complaint.assignedTo?.name || 'Official'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {complaint.assignedTo?.email || ''}
+                        </Typography>
+                        <Typography variant="caption" color="success.dark" display="block">
+                          {complaint.assignedTo?.role?.toString().replace('ROLE_','').replace('_',' ')}
+                        </Typography>
                       </Box>
                       <CheckIcon color="success" sx={{ ml: 'auto' }} />
                     </Box>
@@ -487,21 +547,20 @@ const ComplaintDetails = () => {
               {/* Assigned To */}
               <Box sx={{ mb: 2 }}>
                 <Typography variant="caption" color="text.secondary">Assigned To</Typography>
-                {complaint.assignedTo || complaint.assignedToName ? (
+                {complaint.assignedTo ? (
                   <Box sx={{ 
                     display: 'flex', alignItems: 'center', gap: 1, mt: 0.5,
                     p: 1, bgcolor: 'success.50', borderRadius: 1, border: '1px solid', borderColor: 'success.200' 
                   }}>
-                    <Avatar sx={{ width: 24, height: 24, fontSize: 12, bgcolor: 'success.main' }}>
-                      {(complaint.assignedTo?.name || complaint.assignedToName)?.[0] || 'O'}
+                    <Avatar sx={{ width: 28, height: 28, fontSize: 12, bgcolor: 'success.main' }}>
+                      {(complaint.assignedTo?.fullName || complaint.assignedTo?.name)?.[0] || 'O'}
                     </Avatar>
                     <Box>
                       <Typography variant="body2" fontWeight={600} color="success.dark">
-                        {complaint.assignedTo?.name || complaint.assignedToName || 'Unknown Official'}
+                        {complaint.assignedTo?.fullName || complaint.assignedTo?.name || 'Official'}
                       </Typography>
                       <Typography variant="caption" color="success.dark">
-                        {complaint.assignedTo?.role?.replace('ROLE_', '').replace('_', ' ') || 
-                         complaint.assignedToRole?.replace('ROLE_', '').replace('_', ' ') || 'Official'}
+                        {complaint.assignedTo?.role?.toString().replace('ROLE_','').replace(/_/g,' ')}
                       </Typography>
                     </Box>
                   </Box>
@@ -558,10 +617,183 @@ const ComplaintDetails = () => {
               </Box>
             </CardContent>
           </Card>
+
+          {/* Rating Card - shown to citizen for resolved complaints */}
+          {isCitizen && complaint.status === 'RESOLVED' && complaint.assignedTo && (
+            <Card elevation={2} sx={{ borderRadius: 2, mt: 2, border: '2px solid', borderColor: canRate ? 'warning.300' : 'success.200' }}>
+              <CardContent>
+                <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <StarIcon sx={{ color: 'warning.main' }} />
+                  Rate Official
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main', fontSize: 14 }}>
+                    {(complaint.assignedTo?.fullName || complaint.assignedTo?.name)?.[0]}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="body2" fontWeight={700}>
+                      {complaint.assignedTo?.fullName || complaint.assignedTo?.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {complaint.assignedTo?.role?.toString().replace('ROLE_','').replace(/_/g,' ')}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                {existingRating ? (
+                  <Box sx={{ textAlign: 'center', py: 1 }}>
+                    <Rating value={existingRating} readOnly size="large" />
+                    <Typography variant="caption" color="success.main" display="block" sx={{ mt: 0.5 }}>
+                      ✅ You have rated this official
+                    </Typography>
+                  </Box>
+                ) : canRate ? (
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    startIcon={<RateReviewIcon />}
+                    onClick={() => setRatingOpen(true)}
+                    sx={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}
+                  >
+                    Give Feedback & Rating
+                  </Button>
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 1 }}>
+                    <Rating value={0} readOnly size="small" />
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                      Rating already submitted
+                    </Typography>
+                  </Box>
+                )}
+
+                {ratingSuccess && (
+                  <Alert severity="success" sx={{ mt: 1 }} icon={<StarIcon />}>
+                    {ratingSuccess}
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
         </Grid>
       </Grid>
 
-      {/* Assign Dialog */}
+      {/* Rating Dialog */}
+      <Dialog open={ratingOpen} onClose={() => setRatingOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <RateReviewIcon color="warning" />
+            <Typography variant="h6" fontWeight={700}>Rate Official Performance</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {/* Official Info */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, bgcolor: 'grey.50', borderRadius: 2, mb: 3 }}>
+            <Avatar sx={{ width: 48, height: 48, bgcolor: 'primary.main', fontSize: 18 }}>
+              {(complaint.assignedTo?.fullName || complaint.assignedTo?.name)?.[0]}
+            </Avatar>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700}>
+                {complaint.assignedTo?.fullName || complaint.assignedTo?.name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {complaint.assignedTo?.role?.toString().replace('ROLE_','').replace(/_/g,' ')} •
+                Complaint: {complaint.complaintId}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Star Rating */}
+          <Box sx={{ textAlign: 'center', mb: 3 }}>
+            <Typography variant="body1" fontWeight={600} gutterBottom>
+              How would you rate this official's performance?
+            </Typography>
+            <Rating
+              value={ratingValue}
+              onChange={(_, val) => setRatingValue(val)}
+              size="large"
+              sx={{ fontSize: '3rem' }}
+              icon={<StarIcon fontSize="inherit" />}
+              emptyIcon={<StarBorderIcon fontSize="inherit" />}
+            />
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+              {ratingValue === 1 && '⭐ Poor'}
+              {ratingValue === 2 && '⭐⭐ Fair'}
+              {ratingValue === 3 && '⭐⭐⭐ Good'}
+              {ratingValue === 4 && '⭐⭐⭐⭐ Very Good'}
+              {ratingValue === 5 && '⭐⭐⭐⭐⭐ Excellent!'}
+            </Typography>
+          </Box>
+
+          <Divider sx={{ mb: 2 }} />
+
+          {/* Feedback Text */}
+          <TextField
+            fullWidth multiline rows={3}
+            label="Your Feedback (Optional)"
+            placeholder="Share your experience with this official... Was the issue resolved properly? Was communication good?"
+            value={ratingFeedback}
+            onChange={(e) => setRatingFeedback(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+
+          {/* Quick feedback chips */}
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="caption" color="text.secondary" gutterBottom display="block">
+              Quick Tags:
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
+              {['Quick Response', 'Professional', 'Resolved Properly', 'Good Communication', 'Needs Improvement'].map(tag => (
+                <Chip
+                  key={tag}
+                  label={tag}
+                  size="small"
+                  variant={ratingFeedback.includes(tag) ? 'filled' : 'outlined'}
+                  color={ratingFeedback.includes(tag) ? 'primary' : 'default'}
+                  onClick={() => {
+                    if (ratingFeedback.includes(tag)) {
+                      setRatingFeedback(prev => prev.replace(tag + '. ', '').replace(tag, '').trim());
+                    } else {
+                      setRatingFeedback(prev => prev ? `${prev}. ${tag}` : tag);
+                    }
+                  }}
+                  sx={{ cursor: 'pointer' }}
+                />
+              ))}
+            </Stack>
+          </Box>
+
+          {/* Anonymous Option */}
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={isAnonymous}
+                onChange={(e) => setIsAnonymous(e.target.checked)}
+                color="primary"
+              />
+            }
+            label={
+              <Typography variant="body2">
+                Submit anonymously (your name won't be shown publicly)
+              </Typography>
+            }
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setRatingOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleSubmitRating}
+            disabled={ratingLoading || !ratingValue}
+            startIcon={ratingLoading ? <CircularProgress size={16} /> : <StarIcon />}
+            sx={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)', minWidth: 140 }}
+          >
+            {ratingLoading ? 'Submitting...' : 'Submit Rating'}
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Dialog open={assignOpen} onClose={() => setAssignOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

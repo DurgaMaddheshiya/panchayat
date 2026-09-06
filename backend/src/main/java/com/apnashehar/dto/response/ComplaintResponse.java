@@ -21,6 +21,7 @@ import java.util.List;
 public class ComplaintResponse {
 
     private Long id;
+    private String complaintId;  // Added complaint ID field
     private String title;
     private String description;
     private ComplaintCategory category;
