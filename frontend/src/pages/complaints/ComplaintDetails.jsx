@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box, Grid, Card, CardContent, Typography, Button, Chip,
   Divider, Avatar, TextField, CircularProgress, MenuItem,
-  Paper, Alert, IconButton, Tooltip,
+  Paper, Alert, Dialog, DialogTitle, DialogContent, DialogActions,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -16,6 +16,7 @@ import {
   Person as PersonIcon,
   CalendarToday as CalendarIcon,
   Assignment as AssignIcon,
+  CheckCircle as CheckIcon,
 } from '@mui/icons-material';
 import api from '../../services/api';
 import { fetchComplaintById, deleteComplaint } from '../../redux/slices/complaintSlice';
@@ -33,7 +34,10 @@ const statusColors = {
   REJECTED: 'error',
 };
 
-const STATUSES = ['SUBMITTED', 'UNDER_REVIEW', 'ASSIGNED', 'IN_PROGRESS', 'ON_HOLD', 'RESOLVED', 'REJECTED'];
+const STATUSES = [
+  'SUBMITTED', 'UNDER_REVIEW', 'ASSIGNED',
+  'IN_PROGRESS', 'ON_HOLD', 'RESOLVED', 'REJECTED'
+];
 
 const ComplaintDetails = () => {
   const { id } = useParams();
@@ -50,17 +54,24 @@ const ComplaintDetails = () => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [statusUpdate, setStatusUpdate] = useState('');
   const [statusNote, setStatusNote] = useState('');
+  const [statusSuccess, setStatusSuccess] = useState('');
+
+  // Assignment states
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [officials, setOfficials] = useState([]);
+  const [selectedOfficial, setSelectedOfficial] = useState('');
+  const [assignLoading, setAssignLoading] = useState(false);
+  const [assignSuccess, setAssignSuccess] = useState('');
 
   const isAdmin = ['ADMIN', 'ROLE_ADMIN'].includes(user?.role);
   const isOfficial = ['OFFICIAL', 'ROLE_OFFICIAL', 'SOCIAL_WORKER', 'ROLE_SOCIAL_WORKER', 'ADMIN', 'ROLE_ADMIN'].includes(user?.role);
-  // Owner check — backend returns createdBy object with id
   const isOwner = complaint?.createdBy?.id === user?.id || complaint?.createdBy?.id === parseInt(user?.id);
 
   useEffect(() => {
     dispatch(fetchComplaintById(id));
     fetchComments();
     fetchUpvoteStatus();
-  }, [id]);
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (complaint) {
@@ -81,6 +92,37 @@ const ComplaintDetails = () => {
       const res = await api.get(API_ENDPOINTS.VOTES.HAS_UPVOTED(id));
       setHasUpvoted(res.data.data || false);
     } catch (e) {}
+  };
+
+  const fetchOfficials = async () => {
+    try {
+      const res = await api.get('/api/users/officials');
+      const data = res.data?.data || res.data;
+      setOfficials(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setOfficials([]);
+    }
+  };
+
+  const handleOpenAssign = () => {
+    fetchOfficials();
+    setSelectedOfficial(complaint?.assignedTo?.id || '');
+    setAssignOpen(true);
+  };
+
+  const handleAssign = async () => {
+    if (!selectedOfficial) return;
+    setAssignLoading(true);
+    try {
+      await api.put(`${API_ENDPOINTS.COMPLAINTS.ASSIGN(id)}?assigneeId=${selectedOfficial}`);
+      setAssignSuccess('Complaint assigned successfully!');
+      setAssignOpen(false);
+      dispatch(fetchComplaintById(id));
+      setTimeout(() => setAssignSuccess(''), 3000);
+    } catch (e) {
+      console.error('Assign failed', e);
+    }
+    setAssignLoading(false);
   };
 
   const handleUpvote = async () => {
@@ -120,6 +162,8 @@ const ComplaintDetails = () => {
       });
       dispatch(fetchComplaintById(id));
       setStatusNote('');
+      setStatusSuccess('Status updated successfully!');
+      setTimeout(() => setStatusSuccess(''), 3000);
     } catch (e) {}
   };
 
@@ -141,43 +185,36 @@ const ComplaintDetails = () => {
         <Typography variant="h5" fontWeight={700} sx={{ flex: 1 }}>
           Complaint Details
         </Typography>
-        {/* Edit — only owner when complaint is SUBMITTED/PENDING */}
         {isOwner && ['SUBMITTED', 'UNDER_REVIEW'].includes(complaint.status) && (
-          <Button
-            variant="outlined"
-            startIcon={<EditIcon />}
-            onClick={() => navigate(`/complaints/${id}/edit`)}
-          >
+          <Button variant="outlined" startIcon={<EditIcon />} onClick={() => navigate(`/complaints/${id}/edit`)}>
             Edit
           </Button>
         )}
-        {/* Delete — only owner or admin */}
         {(isOwner || isAdmin) && (
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<DeleteIcon />}
-            onClick={() => setDeleteOpen(true)}
-          >
+          <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => setDeleteOpen(true)}>
             Delete
           </Button>
         )}
       </Box>
+
+      {assignSuccess && <Alert severity="success" sx={{ mb: 2 }}>{assignSuccess}</Alert>}
 
       <Grid container spacing={3}>
         {/* Main content */}
         <Grid item xs={12} md={8}>
           <Card elevation={2} sx={{ borderRadius: 2, mb: 3 }}>
             <CardContent>
-              {/* Status & ID */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
                 <Typography variant="caption" color="text.secondary" fontWeight={600}>
                   {complaint.complaintId}
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Chip label={complaint.priority} size="small" color={complaint.priority === 'HIGH' || complaint.priority === 'URGENT' ? 'error' : 'default'} />
                   <Chip
-                    label={complaint.status?.replace('_', ' ')}
+                    label={complaint.priority} size="small"
+                    color={complaint.priority === 'HIGH' || complaint.priority === 'URGENT' ? 'error' : 'default'}
+                  />
+                  <Chip
+                    label={complaint.status?.replace(/_/g, ' ')}
                     color={statusColors[complaint.status] || 'default'}
                     size="small"
                   />
@@ -206,12 +243,21 @@ const ComplaintDetails = () => {
               </Box>
 
               <Chip label={complaint.categoryName || complaint.category} variant="outlined" size="small" sx={{ mb: 2 }} />
-
               <Divider sx={{ mb: 2 }} />
 
               <Typography variant="body1" sx={{ lineHeight: 1.8, whiteSpace: 'pre-line' }}>
                 {complaint.description}
               </Typography>
+
+              {/* Admin Remarks */}
+              {complaint.adminRemarks && (
+                <Paper sx={{ mt: 2, p: 2, bgcolor: 'info.50', border: '1px solid', borderColor: 'info.200', borderRadius: 1 }}>
+                  <Typography variant="subtitle2" fontWeight={600} color="info.main" gutterBottom>
+                    Official Remarks:
+                  </Typography>
+                  <Typography variant="body2">{complaint.adminRemarks}</Typography>
+                </Paper>
+              )}
 
               {/* Upvote */}
               <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -238,25 +284,19 @@ const ComplaintDetails = () => {
               </Typography>
               <Divider sx={{ mb: 2 }} />
 
-              {/* Add comment */}
               <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
                 <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36, fontSize: 14 }}>
                   {user?.fullName?.[0] || 'U'}
                 </Avatar>
                 <Box sx={{ flex: 1, display: 'flex', gap: 1 }}>
                   <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Write a comment..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
+                    fullWidth size="small" placeholder="Write a comment..."
+                    value={newComment} onChange={(e) => setNewComment(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleAddComment()}
-                    multiline
-                    maxRows={3}
+                    multiline maxRows={3}
                   />
                   <Button
-                    variant="contained"
-                    size="small"
+                    variant="contained" size="small"
                     onClick={handleAddComment}
                     disabled={commentLoading || !newComment.trim()}
                     sx={{ minWidth: 40, px: 1.5 }}
@@ -295,7 +335,51 @@ const ComplaintDetails = () => {
 
         {/* Sidebar */}
         <Grid item xs={12} md={4}>
-          {/* Status Update (only for officials/admin) */}
+
+          {/* Assign to Official (admin only) */}
+          {isAdmin && (
+            <Card elevation={2} sx={{ borderRadius: 2, mb: 2, border: '1px solid', borderColor: 'primary.200' }}>
+              <CardContent>
+                <Typography variant="h6" fontWeight={600} gutterBottom>
+                  👮 Assign to Official
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+
+                {complaint.assignedTo ? (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Currently Assigned To:
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1.5, bgcolor: 'success.50', borderRadius: 1, border: '1px solid', borderColor: 'success.200' }}>
+                      <Avatar sx={{ width: 32, height: 32, bgcolor: 'success.main', fontSize: 13 }}>
+                        {complaint.assignedToName?.[0] || 'O'}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="body2" fontWeight={600}>{complaint.assignedToName}</Typography>
+                        <Typography variant="caption" color="text.secondary">{complaint.assignedToEmail}</Typography>
+                      </Box>
+                      <CheckIcon color="success" sx={{ ml: 'auto' }} />
+                    </Box>
+                  </Box>
+                ) : (
+                  <Alert severity="warning" sx={{ mb: 2 }}>
+                    Not assigned yet
+                  </Alert>
+                )}
+
+                <Button
+                  variant="contained"
+                  fullWidth
+                  startIcon={<AssignIcon />}
+                  onClick={handleOpenAssign}
+                >
+                  {complaint.assignedTo ? 'Reassign' : 'Assign to Official'}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Status Update (officials/admin) */}
           {isOfficial && (
             <Card elevation={2} sx={{ borderRadius: 2, mb: 2 }}>
               <CardContent>
@@ -303,20 +387,23 @@ const ComplaintDetails = () => {
                   Update Status
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
+                {statusSuccess && <Alert severity="success" sx={{ mb: 2 }}>{statusSuccess}</Alert>}
                 <TextField
                   select fullWidth size="small" label="New Status"
                   value={statusUpdate} onChange={(e) => setStatusUpdate(e.target.value)}
                   sx={{ mb: 2 }}
                 >
-                  {STATUSES.map(s => <MenuItem key={s} value={s}>{s.replace('_', ' ')}</MenuItem>)}
+                  {STATUSES.map(s => (
+                    <MenuItem key={s} value={s}>{s.replace(/_/g, ' ')}</MenuItem>
+                  ))}
                 </TextField>
                 <TextField
                   fullWidth size="small" multiline rows={2}
-                  label="Status Note (optional)"
+                  label="Official Remarks (optional)"
                   value={statusNote} onChange={(e) => setStatusNote(e.target.value)}
                   sx={{ mb: 2 }}
                 />
-                <Button variant="contained" fullWidth onClick={handleStatusUpdate} startIcon={<AssignIcon />}>
+                <Button variant="contained" fullWidth onClick={handleStatusUpdate}>
                   Update Status
                 </Button>
               </CardContent>
@@ -334,7 +421,7 @@ const ComplaintDetails = () => {
                 { label: 'Priority', value: complaint.priority },
                 { label: 'Ward', value: complaint.wardNumber || 'N/A' },
                 { label: 'Filed By', value: complaint.citizenName },
-                { label: 'Assigned To', value: complaint.assignedToName || 'Unassigned' },
+                { label: 'Assigned To', value: complaint.assignedToName || '—' },
                 { label: 'Filed On', value: complaint.createdAt ? new Date(complaint.createdAt).toLocaleDateString('en-IN') : 'N/A' },
                 { label: 'Last Updated', value: complaint.updatedAt ? new Date(complaint.updatedAt).toLocaleDateString('en-IN') : 'N/A' },
               ].map(({ label, value }) => (
@@ -347,6 +434,61 @@ const ComplaintDetails = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Assign Dialog */}
+      <Dialog open={assignOpen} onClose={() => setAssignOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <AssignIcon color="primary" />
+            Assign Complaint to Official
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Select an official or social worker to handle this complaint.
+          </Typography>
+
+          {officials.length === 0 ? (
+            <Alert severity="info">
+              No officials found. Create official accounts from Manage Users.
+            </Alert>
+          ) : (
+            <TextField
+              select fullWidth label="Select Official"
+              value={selectedOfficial}
+              onChange={(e) => setSelectedOfficial(e.target.value)}
+            >
+              <MenuItem value="">— Unassign —</MenuItem>
+              {officials.map((o) => (
+                <MenuItem key={o.id} value={o.id}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Avatar sx={{ width: 28, height: 28, fontSize: 12, bgcolor: 'primary.main' }}>
+                      {o.fullName?.[0]}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>{o.fullName}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {o.role} • {o.email}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAssignOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleAssign}
+            disabled={assignLoading || !selectedOfficial}
+            startIcon={assignLoading ? <CircularProgress size={16} /> : <AssignIcon />}
+          >
+            Assign
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <ConfirmDialog
         open={deleteOpen}

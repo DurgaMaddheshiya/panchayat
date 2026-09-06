@@ -37,7 +37,7 @@ const citizenNav = [
 const officialNav = [
   { label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { label: 'All Complaints', icon: <ListAltIcon />, path: '/complaints' },
-  { label: 'Assigned to Me', icon: <ReportIcon />, path: '/my-complaints' },
+  { label: 'Assigned to Me', icon: <ReportIcon />, path: '/assigned-complaints' },
   { label: 'Statistics', icon: <BarChartIcon />, path: '/dashboard' },
   { label: 'Profile', icon: <PersonIcon />, path: '/profile' },
 ];

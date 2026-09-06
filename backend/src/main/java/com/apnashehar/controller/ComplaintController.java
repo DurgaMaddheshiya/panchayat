@@ -55,6 +55,14 @@ public class ComplaintController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @GetMapping("/assigned-to-me")
+    @PreAuthorize("hasAnyRole('OFFICIAL', 'SOCIAL_WORKER', 'ADMIN')")
+    @Operation(summary = "Get complaints assigned to current official")
+    public ResponseEntity<ApiResponse<Page<ComplaintResponse>>> getAssignedComplaints(Pageable pageable) {
+        Page<ComplaintResponse> response = complaintService.getAssignedComplaints(pageable);
+        return ResponseEntity.ok(ApiResponse.success("Assigned complaints fetched", response));
+    }
+
     @GetMapping("/my-complaints")
     @Operation(summary = "Get current user's complaints")
     public ResponseEntity<ApiResponse<Page<ComplaintResponse>>> getMyComplaints(Pageable pageable) {

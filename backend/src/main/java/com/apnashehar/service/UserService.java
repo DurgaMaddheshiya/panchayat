@@ -173,6 +173,21 @@ public class UserService {
     }
 
     /**
+     * Get officials and social workers for assignment dropdown
+     */
+    @Transactional(readOnly = true)
+    public java.util.List<UserResponse> getOfficials() {
+        java.util.List<com.apnashehar.entity.User> officials = new java.util.ArrayList<>();
+        officials.addAll(userRepository.findByRoleAndIsDeletedFalse(UserRole.OFFICIAL));
+        officials.addAll(userRepository.findByRoleAndIsDeletedFalse(UserRole.SOCIAL_WORKER));
+        officials.addAll(userRepository.findByRoleAndIsDeletedFalse(UserRole.ADMIN));
+        return officials.stream()
+                .filter(u -> u.getIsActive())
+                .map(userMapper::toResponse)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
      * Get statistics
      */
     @Transactional(readOnly = true)

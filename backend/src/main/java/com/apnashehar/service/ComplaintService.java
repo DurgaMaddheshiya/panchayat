@@ -178,6 +178,17 @@ public class ComplaintService {
     }
 
     /**
+     * Get complaints assigned to current logged-in official
+     */
+    @Transactional(readOnly = true)
+    public Page<ComplaintResponse> getAssignedComplaints(Pageable pageable) {
+        UserPrincipal currentUser = getCurrentUser();
+        return complaintRepository
+                .findByAssignedToIdAndIsDeletedFalseOrderByCreatedAtDesc(currentUser.getId(), pageable)
+                .map(c -> mapToComplaintResponse(c, currentUser.getId()));
+    }
+
+    /**
      * Assign complaint to user
      */
     @Transactional

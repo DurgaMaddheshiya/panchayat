@@ -26,6 +26,14 @@ public class UserController {
 
     private final UserService userService;
 
+    @GetMapping("/officials")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OFFICIAL')")
+    @Operation(summary = "Get all officials and social workers for assignment")
+    public ResponseEntity<ApiResponse<java.util.List<UserResponse>>> getOfficials() {
+        java.util.List<UserResponse> officials = userService.getOfficials();
+        return ResponseEntity.ok(ApiResponse.success("Officials fetched", officials));
+    }
+
     @GetMapping("/profile")
     @Operation(summary = "Get current user profile")
     public ResponseEntity<ApiResponse<UserResponse>> getCurrentUserProfile() {

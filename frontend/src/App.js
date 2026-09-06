@@ -20,6 +20,7 @@ import ComplaintList from './pages/complaints/ComplaintList';
 import ComplaintDetails from './pages/complaints/ComplaintDetails';
 import CreateComplaint from './pages/complaints/CreateComplaint';
 import MyComplaints from './pages/complaints/MyComplaints';
+import AssignedComplaints from './pages/complaints/AssignedComplaints';
 import EditComplaint from './pages/complaints/EditComplaint';
 import Profile from './pages/profile/Profile';
 import EditProfile from './pages/profile/EditProfile';
@@ -66,6 +67,7 @@ function App() {
           <Route path="/complaints/:id" element={<ComplaintDetails />} />
           <Route path="/complaints" element={<ComplaintList />} />
           <Route path="/my-complaints" element={<MyComplaints />} />
+          <Route path="/assigned-complaints" element={<AssignedComplaints />} />
 
           {/* Profile */}
           <Route path="/profile/edit" element={<EditProfile />} />
