@@ -30,5 +30,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s \
   CMD wget -q --spider http://localhost:8080/actuator/health || exit 1
 
-# Run with production profile
-ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=prod", "app.jar"]
+# Run with production profile - use Render's PORT env variable
+ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=prod", "-Dserver.port=${PORT:-8080}", "app.jar"]
