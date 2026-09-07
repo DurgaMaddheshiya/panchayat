@@ -27,7 +27,7 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/officials")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OFFICIAL')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OFFICIAL', 'CITIZEN', 'SOCIAL_WORKER')")
     @Operation(summary = "Get all officials and social workers for assignment")
     public ResponseEntity<ApiResponse<java.util.List<UserResponse>>> getOfficials() {
         java.util.List<UserResponse> officials = userService.getOfficials();

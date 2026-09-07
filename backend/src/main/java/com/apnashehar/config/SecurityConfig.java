@@ -67,6 +67,10 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .requestMatchers("/uploads/**").permitAll()
+
+                        // Ratings leaderboard - public
+                        .requestMatchers("/api/ratings/leaderboard").permitAll()
+                        .requestMatchers("/api/ratings/official/**").permitAll()
                         
                         // Admin only endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

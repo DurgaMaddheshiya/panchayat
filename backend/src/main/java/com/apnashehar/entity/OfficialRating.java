@@ -7,10 +7,16 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 /**
- * OfficialRating Entity - Citizens can rate officials' performance
+ * OfficialRating Entity - Citizens can rate officials' performance after complaint resolution
  */
 @Entity
-@Table(name = "official_ratings")
+@Table(name = "official_ratings",
+    indexes = {
+        @Index(name = "idx_official_rating_official", columnList = "official_id"),
+        @Index(name = "idx_official_rating_complaint", columnList = "complaint_id"),
+        @Index(name = "idx_official_rating_citizen", columnList = "citizen_id")
+    }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -44,12 +50,4 @@ public class OfficialRating extends BaseEntity {
 
     @Column(name = "is_anonymous", nullable = false)
     private Boolean isAnonymous = false;
-
-    // Index for faster queries
-    @Table(indexes = {
-        @Index(name = "idx_official_rating", columnList = "official_id, rating"),
-        @Index(name = "idx_complaint_rating", columnList = "complaint_id"),
-        @Index(name = "idx_citizen_rating", columnList = "citizen_id")
-    })
-    public static class Indexes {}
 }

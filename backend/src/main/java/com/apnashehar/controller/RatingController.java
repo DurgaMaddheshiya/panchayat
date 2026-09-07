@@ -58,17 +58,15 @@ public class RatingController {
     }
 
     @GetMapping("/leaderboard")
-    @Operation(summary = "Get top-rated officials leaderboard")
+    @Operation(summary = "Get top-rated officials leaderboard (public)")
     public ResponseEntity<ApiResponse<List<OfficialStatsResponse>>> getTopRatedOfficials(
             @RequestParam(defaultValue = "10") int limit) {
-        
         List<OfficialStatsResponse> topOfficials = ratingService.getTopRatedOfficials(limit);
         return ResponseEntity.ok(ApiResponse.success("Top-rated officials retrieved successfully", topOfficials));
     }
 
     @GetMapping("/can-rate/{complaintId}")
-    @PreAuthorize("hasRole('CITIZEN')")
-    @Operation(summary = "Check if citizen can rate this complaint")
+    @Operation(summary = "Check if current user can rate this complaint")
     public ResponseEntity<ApiResponse<Boolean>> canRateComplaint(@PathVariable Long complaintId) {
         boolean canRate = ratingService.canRateComplaint(complaintId);
         return ResponseEntity.ok(ApiResponse.success("Rating eligibility checked", canRate));

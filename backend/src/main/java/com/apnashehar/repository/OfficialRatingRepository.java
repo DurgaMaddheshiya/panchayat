@@ -62,17 +62,16 @@ public interface OfficialRatingRepository extends JpaRepository<OfficialRating, 
     /**
      * Get top-rated officials
      */
-    @Query("SELECT r.official.id as officialId, r.official.name as officialName, " +
+    @Query("SELECT r.official.id as officialId, r.official.fullName as officialName, " +
            "AVG(r.rating) as avgRating, COUNT(r) as totalRatings " +
            "FROM OfficialRating r " +
-           "WHERE r.official.role IN ('ROLE_OFFICIAL', 'ROLE_SOCIAL_WORKER') " +
-           "GROUP BY r.official.id, r.official.name " +
+           "GROUP BY r.official.id, r.official.fullName " +
            "HAVING COUNT(r) >= :minRatings " +
            "ORDER BY AVG(r.rating) DESC")
     List<Object[]> getTopRatedOfficials(@Param("minRatings") Long minRatings, Pageable pageable);
 
     /**
-     * Get recent ratings for dashboard
+     * Get recent ratings for an official
      */
     @Query("SELECT r FROM OfficialRating r WHERE r.official.id = :officialId ORDER BY r.createdAt DESC")
     List<OfficialRating> getRecentRatingsByOfficialId(@Param("officialId") Long officialId, Pageable pageable);
