@@ -117,7 +117,7 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
            nativeQuery = true)
     List<Object[]> getMonthlyComplaintStats();
 
-    @Query(value = "SELECT AVG(DATEDIFF('DAY', created_at, resolved_at)) FROM complaints " +
+    @Query(value = "SELECT AVG(DATEDIFF(resolved_at, created_at)) FROM complaints " +
                    "WHERE status = 'RESOLVED' AND resolved_at IS NOT NULL AND is_deleted = false",
            nativeQuery = true)
     Double getAverageResolutionTimeInDays();
