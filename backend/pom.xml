@@ -119,7 +119,12 @@
             <version>1.5</version>
         </dependency>
 
-        <!-- DevTools -->
+        <!-- SendGrid Email Service -->
+        <dependency>
+            <groupId>com.sendgrid</groupId>
+            <artifactId>sendgrid-java</artifactId>
+            <version>4.10.2</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
