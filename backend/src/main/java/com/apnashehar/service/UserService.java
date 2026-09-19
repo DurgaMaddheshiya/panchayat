@@ -1,5 +1,6 @@
 package com.apnashehar.service;
 
+import com.apnashehar.dto.request.UpdateProfileRequest;
 import com.apnashehar.dto.request.UserRegistrationRequest;
 import com.apnashehar.dto.response.UserResponse;
 import com.apnashehar.entity.User;
@@ -60,7 +61,7 @@ public class UserService {
      * Update user profile
      */
     @Transactional
-    public UserResponse updateProfile(UserRegistrationRequest request) {
+    public UserResponse updateProfile(UpdateProfileRequest request) {
         UserPrincipal currentUser = getCurrentUser();
 
         User user = userRepository.findByIdAndIsDeletedFalse(currentUser.getId())

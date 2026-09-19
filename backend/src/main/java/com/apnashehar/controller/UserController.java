@@ -1,5 +1,6 @@
 package com.apnashehar.controller;
 
+import com.apnashehar.dto.request.UpdateProfileRequest;
 import com.apnashehar.dto.request.UserRegistrationRequest;
 import com.apnashehar.dto.response.ApiResponse;
 import com.apnashehar.dto.response.UserResponse;
@@ -59,7 +60,7 @@ public class UserController {
     @PutMapping("/profile")
     @Operation(summary = "Update user profile")
     public ResponseEntity<ApiResponse<UserResponse>> updateProfile(
-            @Valid @RequestBody UserRegistrationRequest request) {
+            @Valid @RequestBody UpdateProfileRequest request) {
         UserResponse response = userService.updateProfile(request);
         return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", response));
     }
